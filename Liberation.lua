@@ -25,21 +25,28 @@ local promokillsays = {
     "Dodging bullets like Neo with Liberation | github.com/NKillHere/Liberation"
 }
 local trashkillsays = {
-    "When you see me in your esp you shit yourself", "bot_difficulty 5",
-    "bot_kick and you're still here", "de_$troyed", "de_struction",
-    "cs_tutorial01 but for hvh should exist for you", "paste user down",
+    "When you see me in your esp you shit yourself",
+    "bot_difficulty 5",
+    "bot_kick and you're still here",
+    "de_$troyed",
+    "de_struction",
+    "cs_tutorial01 but for hvh should exist for you"
+    "paste user down",
     "buddha mode $",
     "did you say something, I can't hear you over the sound of my 100% winrate",
-    "2kd+ with no sweat", "?", "You alright mate?",
+    "2kd+ with no sweat",
+    "?",
+    "You alright mate?",
     "What the fuck were you thinking?",
     "You stop believing that your cheat can carry you when you see me",
     "There's a void where your brain should be",
     "How are you still breathing with that iq of yours?",
     "Do stupid shit, win stupid prizes. Big Surprise.",
-    "Go join hvh academy, you fucking suck", "IQ?",
+    "Go join hvh academy, you fucking suck",
+    "IQ?",
     "You're so retarded I think you might be inbred, get a DNA test.",
     "You're such an ape, you're either a negroid or have been huffing lead paint",
-    "Gloat that you have neverlose, but it will never save you",
+    "Gloat that you have a pasted lua, but it will never save you",
     "Let's be honest here, you're fucking stupid. I have no idea how you are breathing."
 }
 local funkillsays = {
@@ -54,15 +61,21 @@ local funkillsays = {
     "Only my weapon understands me.",
     "Please don't think I'm a bigot, I kill races equally!",
     "Mmm smells like chicken.", "So THAT's what that does.",
-    "That can't be good.", "That's gonna leave a mark.", "That's the ticket.",
+    "That can't be good.",
+    "That's gonna leave a mark.",
+    "That's the ticket.",
     "The gene pool is stagnant, and I'm the Minister of Chlorine!",
     "Video games don't kill people, I do.",
     "Wouldn't it be safe to say your family tree is a mobius loop?",
-    "Yeah, that's what they all say.", "Guns dont kill people, I do",
+    "Yeah, that's what they all say.",
+    "Guns dont kill people, I do",
     "You got blood on my suit.",
     "That helmet of yours is a nice bowl for your brains!",
-    "Somebody stole my donuts, and your all gonna pay!", "See ya maaaaaate!",
-    "Juan.", "I hope nobody's taping this!", "I will send you to Jesus",
+    "Somebody stole my donuts, and your all gonna pay!",
+    "See ya maaaaaate!",
+    "Juan.",
+    "I hope nobody's taping this!",
+    "I will send you to Jesus",
     "ℍ𝔼'𝕊 𝔻𝕌𝕄ℙ𝕀ℕ𝔾! 𝔹𝕎𝔸ℍ𝔸ℍ𝔸 (◣_◢)",
     "(◣_◢)",
     "𝕡𝕙𝕚𝕝𝕚𝕡𝟘𝟙𝟝 𝕔𝕒𝕞𝕖 𝕥𝕠 𝕞𝕪 𝕕𝕠𝕠𝕣 𝕝𝕒𝕤𝕥 𝕟𝕚𝕘𝕙𝕥 𝕒𝕟𝕕 𝕥𝕠𝕝𝕕 𝕞𝕖: 'FATALITY is best' 𝕒𝕟𝕕 𝕀 𝕤𝕒𝕚𝕕 'ok king👑' (◣_◢) ",
@@ -396,7 +409,7 @@ end
 
 local r, g, b = ui.get(refs.menu_color)
 liberation_console = client.color_log(r, g, b, "Liberation •\0")
-
+-- HIT AND MISS LOG DON'T WORK PROPERLY
 local function hit(e)
     local intended_txt = ""
     local hitgroup_name = named_hitgroups[e.hitgroup + 1] or '?'
