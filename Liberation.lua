@@ -451,8 +451,13 @@ end
 local function on_setup_command(cmd)
     clantag(cmd)
 end
+
+local local_player = entity.get_player_name(entity.get_local_player())
+if local_player == "unknown" then local_player = "Player" end
+
 local function on_shutdown()
     client.set_clan_tag("")
+    client.log(string.format(" See you next time, %s.", local_player))
 end
 client.set_event_callback("paint_ui", on_paint)
 client.set_event_callback("setup_command", on_setup_command)
@@ -460,7 +465,5 @@ client.set_event_callback("aim_fire", extractor)
 client.set_event_callback("aim_miss", miss)
 client.set_event_callback("player_death", trashtalk)
 client.set_event_callback("aim_hit", hit)
-local local_player = entity.get_player_name(entity.get_local_player())
-if local_player == "unknown" then local_player = "Player" end
 client.set_event_callback("shutdown", on_shutdown)
 client.log(string.format(" Fully loaded, %s. Welcome to Liberation.", local_player))
