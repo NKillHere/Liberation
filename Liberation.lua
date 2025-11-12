@@ -84,7 +84,7 @@ local funkillsays = {
 }
 local menu = {
     tab = ui.new_combobox("LUA", "A", "Tabs", {"Visuals", "Misc"}),
-
+                --Working AA sometime soon, not pasting it is my plan -- NKill
     --     antiaim = {
     --         mode = ui.new_combobox ("LUA", "A", "Anti-aim mode", {
     --             "Off",
@@ -338,7 +338,7 @@ local refs = {
 
 local old_tag_string = nil
 local can_reset = false
-
+-- This could probably be optimized size-wise, I have no idea how however. -- NKill
 local anim_txt = {"✰ ", "✰ ⚝","✰ L", "✰ L⚝", "✰ Li", "✰ Li⚝", "✰ Lib", "✰ Lib⚝", "✰ Libe", "✰ Libe⚝",
  "✰ Liber", "✰ Liber⚝", "✰ Libera", "✰ Libera⚝","✰ Liberat","✰ Liberat⚝", "✰ Liberati", "✰ Liberati⚝",
  "✰ Liberatio", "✰ Liberatio⚝","✰ Liberation", "✰ Liberation ", "✰ Liberation ", "✰ Liberatio⚝", "✰ Liberatio",
@@ -377,7 +377,7 @@ local function trashtalk(e)
     elseif ui.get(menu.misc.killsay_types) == "Trashtalk" then
         trashtalk = trashkillsays
     end
-    
+    -- Need to figure out appending to a table multiple killsays in order to make it work as a multiselect. This elseif chain is NOT permanent. --NKill
     -- trashtalk = {table.unpack(ttrashkillsays),table.unpack(tfunkillsays), table.unpack(tpromokillsays)}
 
     local attacker, victim = client.userid_to_entindex(e.attacker), client.userid_to_entindex(e.userid)
@@ -393,7 +393,7 @@ local logs = {
     bt = 0,
     goodornot = ""
 }
-
+-- extractor is meant to take some values on fire to be compared to the ones on hit/miss to determine if it's a severe mismatch(like hitting under an intended damage that was supposed to kill the enemy, if it were a min dmg it could just be ignored.). This is different as the usual method such as in the public hitlog lua gives an inaccurate backtrack amount(Long explanation which I can't remember exactly verbatim). --NKill(info from Valee1337)
 local function extractor(e)
     logs.bt = e.backtrack
     logs.intended_hitgroup = named_hitgroups[e.hitgroup + 1]
