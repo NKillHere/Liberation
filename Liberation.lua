@@ -7,7 +7,7 @@
 local lapi_check, lapi = pcall(require "gamesense/lapi")
 --@todo: apparently error isn't working, got to figure this shit out
 -- if not lapi_check then
---     error("LAPI is required for this lua, download from https://github.com/Tony1337-bit/lapi")
+--     error("LAPI is required for this lua, download from https://github.com/Tony1337-bit/library")
 -- end
 local clipboard = require("gamesense/clipboard")
 local vector = require("vector")
