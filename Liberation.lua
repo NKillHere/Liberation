@@ -3,15 +3,22 @@
 
 -- |Libraries|
 
--- |Constants|
-local named_hitgroups = {"generic", "head", "chest", "stomach", "left arm", "right arm", "left leg","right leg", "neck", "?", "gear"}
--- |Variables|
-local global_vars = {
-    local_player = nil,
-    in_jump = false,
-}
 
-local promokillsays = {
+local lapi_check, lapi = pcall(require "gamesense/lapi")
+--@todo: apparently error isn't working, got to figure this shit out
+-- if not lapi_check then
+--     error("LAPI is required for this lua, download from https://github.com/Tony1337-bit/lapi")
+-- end
+local clipboard = require("gamesense/clipboard")
+local vector = require("vector")
+
+-- |Constants|
+
+local NAMED_HITGROUPS = {"generic", "head", "chest", "stomach", "left arm", "right arm", "left leg","right leg", "neck", "?", "gear"}
+local PREFIX = "Liberation"
+-- |Variables|
+
+local promo_killsays = {
     "Flying free and hitting heads with Liberation | github.com/NKillHere/Liberation",
     "Stacking bodies high as a skyscraper with Liberation | github.com/NKillHere/Liberation",
     "Mad? No worries script is free | github.com/NKillHere/Liberation",
@@ -24,13 +31,13 @@ local promokillsays = {
     "I push like Rambo but remain unharmed | github.com/NKillHere/Liberation",
     "Dodging bullets like Neo with Liberation | github.com/NKillHere/Liberation"
 }
-local trashkillsays = {
-    "When you see me in your esp you shit yourself",
+local trash_killsays = {
+    "When you see me on your esp you shit yourself",
     "bot_difficulty 5",
     "bot_kick and you're still here",
     "de_$troyed",
     "de_struction",
-    "cs_tutorial01 but for hvh should exist for you"
+    "cs_tutorial01 but for hvh should exist for you",
     "paste user down",
     "buddha mode $",
     "did you say something, I can't hear you over the sound of my 100% winrate",
@@ -45,11 +52,11 @@ local trashkillsays = {
     "Go join hvh academy, you fucking suck",
     "IQ?",
     "You're so retarded I think you might be inbred, get a DNA test.",
-    "You're such an ape, you're either a negroid or have been huffing lead paint",
+    "You're such an ape, you're either a negroid or have been huffing lead paint for the past 10 years",
     "Gloat that you have a pasted lua, but it will never save you",
     "Let's be honest here, you're fucking stupid. I have no idea how you are breathing."
 }
-local funkillsays = {
+local fun_killsays = {
     "Here you go Uncle Dave, happy fucking birthday!",
     "Here's some lead for you to recycle!", "Here's your tax relief!",
     "I AM the law! heheheh",
@@ -68,7 +75,7 @@ local funkillsays = {
     "Video games don't kill people, I do.",
     "Wouldn't it be safe to say your family tree is a mobius loop?",
     "Yeah, that's what they all say.",
-    "Guns dont kill people, I do",
+    "Guns dont kill people, I do.",
     "You got blood on my suit.",
     "That helmet of yours is a nice bowl for your brains!",
     "Somebody stole my donuts, and your all gonna pay!",
@@ -82,388 +89,360 @@ local funkillsays = {
     "𝕖𝕧𝕖𝕣𝕪𝕥𝕚𝕞𝕖 𝕚𝕕𝕚𝕠𝕥 𝕔𝕠𝕞𝕡𝕒𝕣𝕖 𝕞𝕖 𝕛𝕦𝕤𝕥 𝕣𝕖𝕞𝕖𝕞𝕓𝕖𝕣 𝕚𝕞 𝕠𝕡𝕡𝕠𝕤𝕚𝕥𝕖 𝕦𝕚𝕕 𝕕𝕠𝕨𝕟 𝕜𝕕 𝕦𝕡 (◣_◢)",
     "HvH Highlights #7000 feat. (insert paste here)"
 }
-local menu = {
-    tab = ui.new_combobox("LUA", "A", "Tabs", {"Visuals", "Misc"}),
-                --Working AA sometime soon, not pasting it is my plan -- NKill
-    --     antiaim = {
-    --         mode = ui.new_combobox ("LUA", "A", "Anti-aim mode", {
-    --             "Off",
-    --             "Recommended",
-    --             "Builder"
-    --         }),
-    --         state = ui.new_combobox ("LUA", "A", "Anti-aim state", {
-    --             "Global",
-    --             "Stand",
-    --             "Move",
-    --             "Slow walk",
-    --             "Air",
-    --             "Air crouch",
-    --             "Crouching",
-    --             "Sneaking"
-    --         })
-    --         states = {
-    --             global = {
-    --                 toggle = ui.new_checkbox("LUA", "A", "[Global] Toggle")
-    --                 pitch = ui.new_combobox("LUA", "A", "[Global] Pitch", { "Off", "Down", "Up", "Custom" }),
-    --                 custom_pitch = ui.new_slider("LUA", "A", "[Global] Custom pitch", -89, 89, 0, true, "°"),
-    --                 yaw_base = ui.new_combobox("LUA", "A", "[Global] Yaw base", { "Local view", "At targets" }),
-    --                 yaw = ui.new_combobox("LUA", "A", "[Global] Yaw", { "Off", "Backwards", "Spin" }),
-    --                 yaw_add = ui.new_slider("LUA", "A", "[Global] Yaw add", -180, 180, 0, true, "°"),
-    --                 yaw_jitter = ui.new_combobox("LUA", "A", "[Global] Yaw jitter", { "Off", "Offset", "Center", "Random", "Skitter" }),
-    --                 yaw_jitter_offset = ui.new_slider("LUA", "A", "[Global] Jitter offset", -180, 180, 0, true, "°"),
-    --                 body_yaw = ui.new_combobox("LUA", "A", "[Global] Body yaw", { "Off", "Opposite", "Jitter", "Static" }),
-    --                 body_yaw_delta = ui.new_slider("LUA", "A", "[Global] Body yaw delta", -60, 60, 0, true, "°"),
-    --                 defensive_enable = ui.new_checkbox("LUA", "A", "[Global] Defensive enable"),
-    --                 defensive_pitch = ui.new_combobox("LUA", "A", "[Global] Defensive pitch", { "Off", "Down", "Up", "Custom" }),
-    --                 defensive_custom_pitch = ui.new_slider("LUA", "A", "[Global] Defensive custom pitch", -89, 89, 0, true, "°"),
-    --                 defensive_yaw = ui.new_combobox("LUA", "A", "[Global] Defensive yaw", { "Off", "Spin", "Random" }),
-    --                 defensive_yaw_jitter = ui.new_combobox("LUA", "A", "[Global] Defensive yaw jitter", { "Off", "Offset", "Center", "Random", "Skitter" }),
-    --                 defensive_yaw_jitter_offset = ui.new_slider("LUA", "A", "[Global] Defensive jitter offset", -180, 180, 0, true, "°"),
-    --             },           
-    --             stand = {
-    --                 override = ui.new_checkbox("LUA", "A", "[Stand] Override"),
-    --                 pitch = ui.new_combobox("LUA", "A", "[Stand] Pitch", { "Off", "Down", "Up", "Custom" }),
-    --                 custom_pitch = ui.new_slider("LUA", "A", "[Stand] Custom pitch", -89, 89, 0, true, "°"),
-    --                 yaw_base = ui.new_combobox("LUA", "A", "[Stand] Yaw base", { "Local view", "At targets" }),
-    --                 yaw = ui.new_combobox("LUA", "A", "[Stand] Yaw", { "Off", "Backwards", "Spin" }),
-    --                 yaw_add = ui.new_slider("LUA", "A", "[Stand] Yaw add", -180, 180, 0, true, "°"),
-    --                 yaw_jitter = ui.new_combobox("LUA", "A", "[Stand] Yaw jitter", { "Off", "Offset", "Center", "Random", "Skitter" }),
-    --                 yaw_jitter_offset = ui.new_slider("LUA", "A", "[Stand] Jitter offset", -180, 180, 0, true, "°"),
-    --                 body_yaw = ui.new_combobox("LUA", "A", "[Stand] Body yaw", { "Off", "Opposite", "Jitter", "Static" }),
-    --                 body_yaw_delta = ui.new_slider("LUA", "A", "[Stand] Body yaw delta", -60, 60, 0, true, "°"),
-    --                 defensive_enable = ui.new_checkbox("LUA", "A", "[Stand] Defensive enable"),
-    --                 defensive_pitch = ui.new_combobox("LUA", "A", "[Stand] Defensive pitch", { "Off", "Down", "Up", "Custom" }),
-    --                 defensive_custom_pitch = ui.new_slider("LUA", "A", "[Stand] Defensive custom pitch", -89, 89, 0, true, "°"),
-    --                 defensive_yaw = ui.new_combobox("LUA", "A", "[Stand] Defensive yaw", { "Off", "Spin", "Random" }),
-    --                 defensive_yaw_jitter = ui.new_combobox("LUA", "A", "[Stand] Defensive yaw jitter", { "Off", "Offset", "Center", "Random", "Skitter" }),
-    --                 defensive_yaw_jitter_offset = ui.new_slider("LUA", "A", "[Stand] Defensive jitter offset", -180, 180, 0, true, "°"),
-    --             },
-    --             move = {
-    --                 override = ui.new_checkbox("LUA", "A", "[Move] Override"),
-    --                 pitch = ui.new_combobox("LUA", "A", "[Move] Pitch", { "Off", "Down", "Up", "Custom" }),
-    --                 custom_pitch = ui.new_slider("LUA", "A", "[Move] Custom pitch", -89, 89, 0, true, "°"),
-    --                  yaw_base = ui.new_combobox("LUA", "A", "[Move] Yaw base", { "Local view", "At targets" }),
-    --                 yaw = ui.new_combobox("LUA", "A", "[Move] Yaw", { "Off", "Backwards", "Spin" }),
-    --                  yaw_add = ui.new_slider("LUA", "A", "[Move] Yaw add", -180, 180, 0, true, "°"),
-    --                 yaw_jitter = ui.new_combobox("LUA", "A", "[Move] Yaw jitter", { "Off", "Offset", "Center", "Random", "Skitter" }),
-    --                  yaw_jitter_offset = ui.new_slider("LUA", "A", "[Move] Jitter offset", -180, 180, 0, true, "°"),
-    --                 body_yaw = ui.new_combobox("LUA", "A", "[Move] Body yaw", { "Off", "Opposite", "Jitter", "Static" }),
-    --                 body_yaw_delta = ui.new_slider("LUA", "A", "[Move] Body yaw delta", -60, 60, 0, true, "°"),
-    --                 defensive_enable = ui.new_checkbox("LUA", "A", "[Move] Defensive enable"),
-    --                 defensive_pitch = ui.new_combobox("LUA", "A", "[Move] Defensive pitch", { "Off", "Down", "Up", "Custom" }),
-    --                 defensive_custom_pitch = ui.new_slider("LUA", "A", "[Move] Defensive custom pitch", -89, 89, 0, true, "°"),
-    --                 defensive_yaw = ui.new_combobox("LUA", "A", "[Move] Defensive yaw", { "Off", "Spin", "Random" }),
-    --                 defensive_yaw_jitter = ui.new_combobox("LUA", "A", "[Move] Defensive yaw jitter", { "Off", "Offset", "Center", "Random", "Skitter" }),
-    --                 defensive_yaw_jitter_offset = ui.new_slider("LUA", "A", "[Move] Defensive jitter offset", -180, 180, 0, true, "°"),
-    --             },
-    --             slow_walk = {
-    --                     override = ui.new_checkbox("LUA", "A", "[Slow walk] Override"),
-    --                     pitch = ui.new_combobox("LUA", "A", "[Slow walk] Pitch", { "Off", "Down", "Up", "Custom" }),
-    --                     custom_pitch = ui.new_slider("LUA", "A", "[Slow walk] Custom pitch", -89, 89, 0, true, "°"),
-    --                     yaw_base = ui.new_combobox("LUA", "A", "[Slow walk] Yaw base", { "Local view", "At targets" }),
-    --                     yaw = ui.new_combobox("LUA", "A", "[Slow walk] Yaw", { "Off", "Backwards", "Spin" }),
-    --                     yaw_add = ui.new_slider("LUA", "A", "[Slow walk] Yaw add", -180, 180, 0, true, "°"),
-    --                     yaw_jitter = ui.new_combobox("LUA", "A", "[Slow walk] Yaw jitter", { "Off", "Offset", "Center", "Random", "Skitter" }),
-    --                     yaw_jitter_offset = ui.new_slider("LUA", "A", "[Slow walk] Jitter offset", -180, 180, 0, true, "°"),
-    --                     body_yaw = ui.new_combobox("LUA", "A", "[Slow walk] Body yaw", { "Off", "Opposite", "Jitter", "Static" }),
-    --                     body_yaw_delta = ui.new_slider("LUA", "A", "[Slow walk] Body yaw delta", -60, 60, 0, true, "°"),
-    --                     defensive_enable = ui.new_checkbox("LUA", "A", "[Slow walk] Defensive enable"),
-    --                     defensive_pitch = ui.new_combobox("LUA", "A", "[Slow walk] Defensive pitch", { "Off", "Down", "Up", "Custom" }),
-    --                     defensive_custom_pitch = ui.new_slider("LUA", "A", "[Slow walk] Defensive custom pitch", -89, 89, 0, true, "°"),
-    --                     defensive_yaw = ui.new_combobox("LUA", "A", "[Slow walk] Defensive yaw", { "Off", "Spin", "Random" }),
-    --                     defensive_yaw_jitter = ui.new_combobox("LUA", "A", "[Slow walk] Defensive yaw jitter", { "Off", "Offset", "Center", "Random", "Skitter" }),
-    --                     defensive_yaw_jitter_offset = ui.new_slider("LUA", "A", "[Slow walk] Defensive jitter offset", -180, 180, 0, true, "°"),
-    --             },
-    --             air = {
-    --                 override = ui.new_checkbox("LUA", "A", "[Air] Override"),
-    --                 pitch = ui.new_combobox("LUA", "A", "[Air] Pitch", { "Off", "Down", "Up", "Custom" }),
-    --                 custom_pitch = ui.new_slider("LUA", "A", "[Air] Custom pitch", -89, 89, 0, true, "°"),
-    --                 yaw_base = ui.new_combobox("LUA", "A", "[Air] Yaw base", { "Local view", "At targets" }),
-    --                 yaw = ui.new_combobox("LUA", "A", "[Air] Yaw", { "Off", "Backwards", "Spin" }),
-    --                 yaw_add = ui.new_slider("LUA", "A", "[Air] Yaw add", -180, 180, 0, true, "°"),
-    --                 yaw_jitter = ui.new_combobox("LUA", "A", "[Air] Yaw jitter", { "Off", "Offset", "Center", "Random", "Skitter" }),
-    --                 yaw_jitter_offset = ui.new_slider("LUA", "A", "[Air] Jitter offset", -180, 180, 0, true, "°"),
-    --                 body_yaw = ui.new_combobox("LUA", "A", "[Air] Body yaw", { "Off", "Opposite", "Jitter", "Static" }),
-    --                 body_yaw_delta = ui.new_slider("LUA", "A", "[Air] Body yaw delta", -60, 60, 0, true, "°"),
-    --                 defensive_enable = ui.new_checkbox("LUA", "A", "[Air] Defensive enable"),
-    --                 defensive_pitch = ui.new_combobox("LUA", "A", "[Air] Defensive pitch", { "Off", "Down", "Up", "Custom" }),
-    --                 defensive_custom_pitch = ui.new_slider("LUA", "A", "[Air] Defensive custom pitch", -89, 89, 0, true, "°"),
-    --                 defensive_yaw = ui.new_combobox("LUA", "A", "[Air] Defensive yaw", { "Off", "Spin", "Random" }),
-    --                 defensive_yaw_jitter = ui.new_combobox("LUA", "A", "[Air] Defensive yaw jitter", { "Off", "Offset", "Center", "Random", "Skitter" }),
-    --                 defensive_yaw_jitter_offset = ui.new_slider("LUA", "A", "[Air] Defensive jitter offset", -180, 180, 0, true, "°"),
-    --             },
-    --             air_crouch = {
-    --                 override = ui.new_checkbox("LUA", "A", "[Air crouch] Override"),
-    --                 pitch = ui.new_combobox("LUA", "A", "[Air crouch] Pitch", { "Off", "Down", "Up", "Custom" }),
-    --                 custom_pitch = ui.new_slider("LUA", "A", "[Air crouch] Custom pitch", -89, 89, 0, true, "°"),
-    --                 yaw_base = ui.new_combobox("LUA", "A", "[Air crouch] Yaw base", { "Local view", "At targets" }),
-    --                 yaw = ui.new_combobox("LUA", "A", "[Air crouch] Yaw", { "Off", "Backwards", "Spin" }),
-    --                 yaw_add = ui.new_slider("LUA", "A", "[Air crouch] Yaw add", -180, 180, 0, true, "°"),
-    --                 yaw_jitter = ui.new_combobox("LUA", "A", "[Air crouch] Yaw jitter", { "Off", "Offset", "Center", "Random", "Skitter" }),
-    --                 yaw_jitter_offset = ui.new_slider("LUA", "A", "[Air crouch] Jitter offset", -180, 180, 0, true, "°"),
-    --                 body_yaw = ui.new_combobox("LUA", "A", "[Air crouch] Body yaw", { "Off", "Opposite", "Jitter", "Static" }),
-    --                 body_yaw_delta = ui.new_slider("LUA", "A", "[Air crouch] Body yaw delta", -60, 60, 0, true, "°"),
-    --                 defensive_enable = ui.new_checkbox("LUA", "A", "[Air crouch] Defensive enable"),
-    --                 defensive_pitch = ui.new_combobox("LUA", "A", "[Air crouch] Defensive pitch", { "Off", "Down", "Up", "Custom" }),
-    --                 defensive_custom_pitch = ui.new_slider("LUA", "A", "[Air crouch] Defensive custom pitch", -89, 89, 0, true, "°"),
-    --                 defensive_yaw = ui.new_combobox("LUA", "A", "[Air crouch] Defensive yaw", { "Off", "Spin", "Random" }),
-    --                 defensive_yaw_jitter = ui.new_combobox("LUA", "A", "[Air crouch] Defensive yaw jitter", { "Off", "Offset", "Center", "Random", "Skitter" }),
-    --                 defensive_yaw_jitter_offset = ui.new_slider("LUA", "A", "[Air crouch] Defensive jitter offset", -180, 180, 0, true, "°"),
-    --             },
-    --             crouch = {
-    --                 override = ui.new_checkbox("LUA", "A", "[Crouch] Override"),
-    --                 pitch = ui.new_combobox("LUA", "A", "[Crouch] Pitch", { "Off", "Down", "Up", "Custom" }),
-    --                 custom_pitch = ui.new_slider("LUA", "A", "[Crouch] Custom pitch", -89, 89, 0, true, "°"),
-    --                 yaw_base = ui.new_combobox("LUA", "A", "[Crouch] Yaw base", { "Local view", "At targets" }),
-    --                 yaw = ui.new_combobox("LUA", "A", "[Crouch] Yaw", { "Off", "Backwards", "Spin" }),
-    --                 yaw_add = ui.new_slider("LUA", "A", "[Crouch] Yaw add", -180, 180, 0, true, "°"),
-    --                 yaw_jitter = ui.new_combobox("LUA", "A", "[Crouch] Yaw jitter", { "Off", "Offset", "Center", "Random", "Skitter" }),
-    --                 yaw_jitter_offset = ui.new_slider("LUA", "A", "[Crouch] Jitter offset", -180, 180, 0, true, "°"),
-    --                 body_yaw = ui.new_combobox("LUA", "A", "[Crouch] Body yaw", { "Off", "Opposite", "Jitter", "Static" }),
-    --                 body_yaw_delta = ui.new_slider("LUA", "A", "[Crouch] Body yaw delta", -60, 60, 0, true, "°"),
-    --                 defensive_enable = ui.new_checkbox("LUA", "A", "[Crouch] Defensive enable"),
-    --                 defensive_pitch = ui.new_combobox("LUA", "A", "[Crouch] Defensive pitch", { "Off", "Down", "Up", "Custom" }),
-    --                 defensive_custom_pitch = ui.new_slider("LUA", "A", "[Crouch] Defensive custom pitch", -89, 89, 0, true, "°"),
-    --                 defensive_yaw = ui.new_combobox("LUA", "A", "[Crouch] Defensive yaw", { "Off", "Spin", "Random" }),
-    --                 defensive_yaw_jitter = ui.new_combobox("LUA", "A", "[Crouch] Defensive yaw jitter", { "Off", "Offset", "Center", "Random", "Skitter" }),
-    --                 defensive_yaw_jitter_offset = ui.new_slider("LUA", "A", "[Crouch] Defensive jitter offset", -180, 180, 0, true, "°"),
-    --             },
-    --             sneaking = {
-    --                 toggle = ui.new_checkbox("LUA", "A", "[Sneaking] Toggle),
-    --                 pitch = ui.new_combobox("LUA", "A", "[Sneaking] Pitch", { "Off", "Down", "Up", "Custom" }),
-    --                 custom_pitch = ui.new_slider("LUA", "A", "[Sneaking] Custom pitch", -89, 89, 0, true, "°"),
-    --                 yaw_base = ui.new_combobox("LUA", "A", "[Sneaking] Yaw base", { "Local view", "At targets" }),
-    --                 yaw = ui.new_combobox("LUA", "A", "[Sneaking] Yaw", { "Off", "Backwards", "Spin" }),
-    --                 yaw_add = ui.new_slider("LUA", "A", "[Sneaking] Yaw add", -180, 180, 0, true, "°"),
-    --                 yaw_jitter = ui.new_combobox("LUA", "A", "[Sneaking] Yaw jitter", { "Off", "Offset", "Center", "Random", "Skitter" }),
-    --                 yaw_jitter_offset = ui.new_slider("LUA", "A", "[Sneaking] Jitter offset", -180, 180, 0, true, "°"),
-    --                 body_yaw = ui.new_combobox("LUA", "A", "[Sneaking] Body yaw", { "Off", "Opposite", "Jitter", "Static" }),
-    --                 body_yaw_delta = ui.new_slider("LUA", "A", "[Sneaking] Body yaw delta", -60, 60, 0, true, "°"),
-    --                 defensive_enable = ui.new_checkbox("LUA", "A", "[Sneaking] Defensive enable"),
-    --                 defensive_pitch = ui.new_combobox("LUA", "A", "[Sneaking] Defensive pitch", { "Off", "Down", "Up", "Custom" }),
-    --                 defensive_custom_pitch = ui.new_slider("LUA", "A", "[Sneaking] Defensive custom pitch", -89, 89, 0, true, "°"),
-    --                 defensive_yaw = ui.new_combobox("LUA", "A", "[Sneaking] Defensive yaw", { "Off", "Spin", "Random" }),
-    --                 defensive_yaw_jitter = ui.new_combobox("LUA", "A", "[Sneaking] Defensive yaw jitter", { "Off", "Offset", "Center", "Random", "Skitter" }),
-    --                 defensive_yaw_jitter_offset = ui.new_slider("LUA", "A", "[Sneaking] Defensive jitter offset", -180, 180, 0, true, "°"),
-    --             },
-    --         },
-    --         edge_yaw = ui.new_hotkey("LUA", "A", "Edge yaw", false, 0),
-    --         anim_breakers = ui.new_multiselect("LUA", "A", "Animation Breaker(s)", {"Pitch zero on land", "Static legs in air", "Leg Jitter"})
-    --     },
-    visuals = {
-        viewmodel_changer = ui.new_checkbox("LUA", "A", "Viewmodel changer"),
-        viewmodel_x = ui.new_slider("LUA", "A", "Viewmodel X", -100, 100, 1,
-                                    true, "°"),
-        viewmodel_y = ui.new_slider("LUA", "A", "Viewmodel Y", -100, 100, 1,
-                                    true, "°"),
-        viewmodel_z = ui.new_slider("LUA", "A", "Viewmodel Z", -100, 100, 1,
-                                    true, "°"),
-        viewmodel_fov = ui.new_slider("LUA", "A", "Viewmodel FOV", -10, 10, 0,
-                                      true),
-        aspect_ratio = ui.new_checkbox("LUA", "A", "Aspect ratio"),
-        aspect_ratio_value = ui.new_slider("LUA", "A", "Aspect ratio value", 0,
-                                           400, 0, true, "%")
-    },
-    misc = {
-        killsay = ui.new_checkbox("LUA", "A", "Killsay"),
-        killsay_types = ui.new_multiselect("LUA", "A", "Killsay Types", {"Promotional", "Trashtalk", "Fun"}),
-        clantag = ui.new_checkbox("LUA", "A", "Clantag"),
-        logs = ui.new_checkbox("LUA", "A", "Logs"),
-        log_types = ui.new_multiselect("LUA", "A", "Log Types", {"Hit", "Miss"}),
-        hit_text = ui.new_label("LUA", "A", "Hit Color"),
-        hit_color = ui.new_color_picker("LUA", "A", "Hit Color", 104, 255, 104,
-                                        1),
-        miss_text = ui.new_label("LUA", "A", "Miss Color"),
-        miss_color = ui.new_color_picker("LUA", "A", "Miss Color", 255, 104,
-                                         104, 1)
-    }
-}
--- |Visibility|
--- local function update_visibility(value)
--- ui.set_visible(menu.antiaim.edge_yaw, value == "Anti-aim")
--- ui.set_visible(menu.antiaim.anim_breakers, value == "Anti-aim") I'll get it to it later, visibility for it is going to be a bitch & 1/2 -NKill
+local custom_killsays = {}
 
--- local builder_on = value == "Anti-aim" and ui.get(menu.antiaim.mode) == "Builder"
--- ui.set_visible(menu.antiaim.state, builder_on) 
--- local current_state = ui.get(menu.antiaim.state)
-local function visibility(value)
-    ui.set_visible(menu.visuals.viewmodel_changer, value == "Visuals")
-    ui.set_visible(menu.visuals.viewmodel_x, value == "Visuals" and ui.get(menu.visuals.viewmodel_changer))
-    ui.set_visible(menu.visuals.viewmodel_y, value == "Visuals" and ui.get(menu.visuals.viewmodel_changer))
-    ui.set_visible(menu.visuals.viewmodel_z, value == "Visuals" and ui.get(menu.visuals.viewmodel_changer))
-    ui.set_visible(menu.visuals.viewmodel_fov, value == "Visuals" and ui.get(menu.visuals.viewmodel_changer))
-    ui.set_visible(menu.visuals.aspect_ratio, value == "Visuals")
-    ui.set_visible(menu.visuals.aspect_ratio_value, value == "Visuals" and ui.get(menu.visuals.aspect_ratio))
 
-    ui.set_visible(menu.misc.killsay, value == "Misc")
-    ui.set_visible(menu.misc.killsay_types, value == "Misc" and ui.get(menu.misc.killsay))
-    ui.set_visible(menu.misc.clantag, value == "Misc")
-    ui.set_visible(menu.misc.logs, value == "Misc")
-    ui.set_visible(menu.misc.log_types, value == "Misc" and ui.get(menu.misc.logs))
-    ui.set_visible(menu.misc.hit_text, value == "Misc" and ui.get(menu.misc.log_types) == "Hit")
-    ui.set_visible(menu.misc.hit_color, value == "Misc" and ui.get(menu.misc.log_types) == "Hit")
-    ui.set_visible(menu.misc.miss_text, value == "Misc" and ui.get(menu.misc.log_types) == "Miss")
-    ui.set_visible(menu.misc.miss_color, value == "Misc" and ui.get(menu.misc.log_types) == "Miss")
+local menu = lui.group("LUA", "A")
+local tabs = menu:combo("Tab", "Main", "Visuals", "Misc")
+
+
+-- [Main]
+
+
+local menu_color = ui.reference("MISC", "Settings", "Menu color") 
+
+menu:label("Accent Color")
+:visible(function()
+    return tabs:get() == "Main"
+end)
+
+local accent_color = menu:color_picker("Accent Color", ui.get(menu_color))
+    :visible(function()
+        return tabs:get() == "Main"
+    end)
+    :callback(function(col)
+        ui.set(menu_color, col:get())
+    end)
+
+
+-- [Visuals]
+
+
+-- Watermark 
+
+local function get_fps()
+    if globals.frametime() > 0 then
+        return math.ceil(1 / globals.frametime())
+    end
+    return 0
 end
 
-ui.set_callback(menu.tab, function(value) visibility(ui.get(menu.tab)) end)
+local watermark_switch = menu:switch("Watermark")
+    :visible(function()
+        return tabs:get() == "Visuals"
+    end)
+-- local watermark_types = menu:selectable("Watermark Addons", "Script Name", "Name", "FPS", "Ping", "Tick Rate", "Time(24h)")
+--     :visible(function()
+--         return tabs:get() == "Visuals" and watermark_switch:get()
+--     end)
+--     :callback(function()
+--         local state = {}
+--         local sname, name = "", ""
+--         local map = {
+--             ["Script Name"] = function()
+--                 sname = "liberation" or ""
+--             end
+--             ["Name"] = function()
+--                 name = utils.name() or ""
+--             end
+--             ["FPS"] = function()
+--                 fps = get_fps() or ""
+--             end
+--             ["Ping"] = function()
+--                 latency = math.ceil(client.latency() * 1000)
+--             end
+--             ["Tick Rate"] = function()
+--                 tickrate = math.ceil(1 / globals.tickinterval())
+--             end
+--             ["Time(24h)"] = function()
+--                 local time = {client.system_time()}
+--             end
+--             }
+--     end)
 
-ui.set_callback(menu.visuals.viewmodel_changer,function(value) visibility(ui.get(menu.tab)) end)
-ui.set_callback(menu.visuals.aspect_ratio,function(value) visibility(ui.get(menu.tab)) end)
+local txt_r, txt_g, txt_b, txt_a = {255,255,255,255} -- lazy to find out how to pass values from two separate callbacks into 1 function, so this'll do just fine -NKill
 
-ui.set_callback(menu.misc.killsay, function(value) visibility(ui.get(menu.tab)) end)
-ui.set_callback(menu.misc.logs, function(value) visibility(ui.get(menu.tab)) end)
-ui.set_callback(menu.misc.log_types, function(value) visibility(ui.get(menu.tab)) end)
+local function watermark(bkg_r, bkg_g, bkg_b, bkg_a)
+    if not watermark_switch:get() then
+        return
+    end
+    local screen_size = vector(client.screen_size())
+    local latency = math.ceil(client.latency() * 1000)
+    local tickrate = math.ceil(1 / globals.tickinterval())
+    local time = {client.system_time()}
+    local formatted_time = string.format("%02d:%02d:%02d", time[1], time[2], time[3])
+    local fps = get_fps()
 
-visibility(ui.get(menu.tab))
--- |References|
+    local watermark_txt = "liberation".. " | ".. utils.name().. " | ".. string.format("fps: %03d", fps).. " | ".. string.format("rtt: %dms", latency)..
+    " | ".. string.format("rate: %d", tickrate).. " | ".. formatted_time
+    
+    local text_size = vector(renderer.measure_text(nil, watermark_txt))
 
-local refs = {
-    menu_color = ui.reference("MISC", "Settings", "Menu color") 
+    renderer.rectangle(screen_size.x - text_size.x - 20, 10, text_size.x + 10, text_size.y + 8, bkg_r, bkg_g, bkg_b, bkg_a)
+
+    renderer.text(screen_size.x - text_size.x - 16, 13, txt_r, txt_g, txt_b, txt_a, "d", 0, watermark_txt)
+end
+
+local watermark_background = menu:label("Watermark Background")
+    :visible(function()
+        return tabs:get() == "Visuals" and watermark_switch:get()
+    end)
+local watermark_background_col = menu:color_picker("Watermark Background", {240,110,140,130})
+    :visible(function()
+        return tabs:get() == "Visuals" and watermark_switch:get()
+    end)
+    :add_callback("paint", function(self) 
+        return watermark(self:get())
+    end)
+
+local watermark_text = menu:label("Watermark Text")
+    :visible(function()
+        return tabs:get() == "Visuals" and watermark_switch:get()
+    end)
+local watermark_text_col = menu:color_picker("Watermark Text", 240, 160, 180, 250)
+    :visible(function()
+        return tabs:get() == "Visuals" and watermark_switch:get()
+    end)
+    :callback(function(self)
+        txt_r, txt_g, txt_b, txt_a = self:get()
+    end)
+
+-- Aspect Ratio + its value that is visible only when switch is on
+
+local aspect_ratio = menu:switch("Aspect Ratio")
+    :visible(function()
+        return tabs:get() == "Visuals"
+    end)
+    :callback(function(obj)
+        cvar.r_aspectratio:set_float(obj:get() and 0)
+    end)
+aspect_ratios = {[177] = '16:9',[161] = '16:10',[150] = '3:2',[133] = '4:3',[125] = '5:4'}
+
+local aspect_ratio_value = menu:slider("Aspect Ratio Value", 0, 250, 150, true, false, 1, aspect_ratios)
+    :visible(function()
+        return aspect_ratio:get() and tabs:get() == "Visuals"
+    end)
+    :callback(function(obj)
+        if not entity.is_alive(entity.get_local_player()) then
+            return
+        end
+        client.set_cvar("r_aspectratio", obj:get() / 100)
+    end)
+
+-- Viewmodel changer switch which reveals x, y, z and fov(in that order)
+-- @note: QoL to reset to default if user wants to, tho if he reloads the lua it'll save over, tough shit!
+
+
+pre_change_x = cvar.viewmodel_offset_x:get_float()
+pre_change_y = cvar.viewmodel_offset_y:get_float()
+pre_change_z = cvar.viewmodel_offset_z:get_float()
+pre_change_fov = cvar.viewmodel_fov:get_float()
+
+local viewmodel_cache = {
+    x = 0,
+    y = 0,
+    z = 0,
+    fov = 0
 }
 
--- |The working bits|
---  [Visuals]
+local viewmodel_changer = menu:switch("Viewmodel Changer")
+    :visible(function()
+        return tabs:get() == "Visuals"
+    end)
+    :callback(function(obj)
+        if not obj:get() then 
+            client.set_cvar("viewmodel_offset_x", pre_change_x)
+            client.set_cvar("viewmodel_offset_y", pre_change_y)
+            client.set_cvar("viewmodel_offset_z", pre_change_z)
+            client.set_cvar("viewmodel_fov", pre_change_fov)
+        elseif viewmodel_cache.x > 0 or viewmodel_cache.y > 0 or viewmodel_cache.z > 0 or viewmodel_cache.fov > 0 then
+            client.set_cvar("viewmodel_offset_x", viewmodel_cache.x)
+            client.set_cvar("viewmodel_offset_y", viewmodel_cache.y)
+            client.set_cvar("viewmodel_offset_z", viewmodel_cache.z)
+            client.set_cvar("viewmodel_fov", viewmodel_cache.fov)
+        end
+    end)
 
--- if ui.get(menu.visuals.aspect_ratio) then
---     local aspect_ratio_value = ui.get(menu.visuals.aspect_ratio_value)
---     client.set_cvar("r_aspectratio", aspect_ratio_value / 100)
--- end
+local viewmodel_x = menu:slider("Viewmodel X", -500, 500, pre_change_x, true, nil, 0.01)
+    :visible(function()
+        return viewmodel_changer:get() and tabs:get() == "Visuals"
+    end)
 
--- if not entity.is_alive(entity.get_local_player) then
---     return
--- end
+    :callback(function(test)
+        viewmodel_cache.x = test:get() / 100
+        client.set_cvar("viewmodel_offset_x", test:get() / 100)
+    end)
 
---  [Misc]
+local viewmodel_y = menu:slider("Viewmodel Y", -500, 500, pre_change_y, true, nil, 0.01)
+    :visible(function()
+        return viewmodel_changer:get() and tabs:get() == "Visuals"
+    end)
+    :callback(function(obj)
+        viewmodel_cache.y = obj:get() / 100
+        client.set_cvar("viewmodel_offset_y", obj:get() / 100) 
+    end)
+
+local viewmodel_z = menu:slider("Viewmodel Z", -500, 500, pre_change_z, true, nil, 0.01)
+    :visible(function()
+        return viewmodel_changer:get() and tabs:get() == "Visuals"
+    end)
+    :callback(function(obj)
+        viewmodel_cache.z = obj:get() / 100
+        client.set_cvar("viewmodel_offset_z", obj:get() / 100)
+    end)
+
+local viewmodel_fov = menu:slider("Viewmodel FOV", 50, 120, pre_change_fov, true)
+    :visible(function()
+        return viewmodel_changer:get() and tabs:get() == "Visuals"
+    end)
+    :callback(function(self)
+        viewmodel_cache.fov = self:get()
+        client.set_cvar("viewmodel_fov", self:get())
+    end)
+
+
+-- [Misc]
+
+
+-- Overengineered Killsay
+
+local function custom_killsay_import()
+    local clipboard_text = clipboard.get()
+
+    if not clipboard_text or clipboard_text == "" then
+        utils.print(PREFIX, "Clipboard is empty.")
+        return
+    end
+
+    local valid, data = pcall(json.parse, clipboard_text)
+
+    if not valid or type(data) ~= "table" then
+        utils.print(PREFIX, "Invalid format, please check your clipboard for mistakes.")
+        utils.print(PREFIX, "An example of a correct list is: [\"example 1\", \"example 2\"]")
+        utils.print(PREFIX, "For more information, please check the official github.")
+        return
+    end
+ 
+    for i = 1, #data do
+        if type(data[i]) ~= "string" then
+            utils.print(PREFIX, "Invalid format, all killsays must be strings.")
+            return
+        end
+    end
+
+    utils.print(PREFIX, "Successfully imported ".. #data.. " killsays.")
+    return data
+end
+
+local killsay_switch = menu:switch("Killsay", false)
+    :visible(function()
+       return tabs:get() == "Misc"
+end)
+local killsay_types = menu:selectable("Killsay Types", {"Promotional", "Trashtalk", "Fun", "Custom"})
+    :visible(function()
+        return killsay_switch:get() and tabs:get() == "Misc"
+end)
+local custom_killsay = menu:button("Import Custom Killsay List", function()
+        custom_killsays = custom_killsay_import()
+end)
+    :visible(function()
+        return killsay_switch:get() and tabs:get() == "Misc" and killsay_types:get("Custom")
+    end)
+
+local function table_contains(tbl, val)
+    for i = 1, #tbl do
+        if tbl[i] == val then
+            return true
+        end
+    end
+    return false
+end
+
+local function get_active_killsays()
+    local active = {}
+    local selected = killsay_types:get()
+
+    if table_contains(selected, "Promotional") then
+        for _, v in ipairs(promo_killsays) do
+            active[#active + 1] = v
+        end
+    end
+
+    if table_contains(selected, "Trashtalk") then
+        for _, v in ipairs(trash_killsays) do
+            active[#active + 1] = v
+        end
+    end
+
+    if table_contains(selected, "Fun") then
+        for _, v in ipairs(fun_killsays) do
+            active[#active + 1] = v
+        end
+    end
+
+    if table_contains(selected, "Custom") then
+        for _, v in ipairs(custom_killsays) do
+            active[#active + 1] = v
+        end
+    end
+
+    return active
+end
+
+client.set_event_callback("player_death", function(e)
+    local attacker = client.userid_to_entindex(e.attacker)
+    local victim = client.userid_to_entindex(e.userid)
+
+    if attacker ~= entity.get_local_player() then return end
+    if not entity.is_enemy(victim) then return end
+
+    local killsays = get_active_killsays()
+    if #killsays == 0 then return end
+
+    local msg = killsays[math.random(#killsays)]
+    client.exec("say " .. msg)
+end)
+
+-- Clantag
 
 local old_tag_string = nil
 local can_reset = false
 -- This could probably be optimized size-wise, I have no idea how however. -- NKill
-local anim_txt = {"✰ ", "✰ ⚝","✰ L", "✰ L⚝", "✰ Li", "✰ Li⚝", "✰ Lib", "✰ Lib⚝", "✰ Libe", "✰ Libe⚝",
- "✰ Liber", "✰ Liber⚝", "✰ Libera", "✰ Libera⚝","✰ Liberat","✰ Liberat⚝", "✰ Liberati", "✰ Liberati⚝",
- "✰ Liberatio", "✰ Liberatio⚝","✰ Liberation", "✰ Liberation ", "✰ Liberation ", "✰ Liberatio⚝", "✰ Liberatio",
- "✰ Liberati⚝", "✰ Liberati", "✰ Liberat⚝", "✰ Liberat", "✰ Libera⚝", "✰ Libera", "✰ Liber⚝", "✰ Liber",
- "✰ Libe⚝","✰ Libe", "✰ Lib⚝", "✰ Lib", "✰ Li⚝", "✰ Li", "✰ L⚝", "✰ L","✰ ⚝", "✰ ", "✰ "}
+local anim_txt = {"✰ ", "✰ _", "✰ _", "✰ L_", "✰ L_", "✰ Li_", "✰ Li_", "✰ Lib_", "✰ Lib_", "✰ Libe_", "✰ Libe_",
+ "✰ Liber_", "✰ Liber_", "✰ Libera_", "✰ Libera_","✰ Liberat_","✰ Liberat_", "✰ Liberati_", "✰ Liberati_","✰ Liberatio_", 
+ "✰ Liberatio_","✰ Liberation_", "✰ Liberation _", "✰ Liberation ", "✰ Liberation _", "✰ Liberation ", "✰ Liberation_",
+ "✰ Liberatio_", "✰ Liberatio_","✰ Liberati_", "✰ Liberati_", "✰ Liberat_", "✰ Liberat_", "✰ Libera_", "✰ Libera_", "✰ Liber_", 
+ "✰ Liber_", "✰ Libe_","✰ Libe_", "✰ Lib_", "✰ Lib_", "✰ Li_", "✰ Li_", "✰ L_", "✰ L_", "✰ _", "✰ _", "✰ "}
 
-function clantag()
-    if ui.get(menu.misc.clantag) then
-        local curtime = math.floor((globals.curtime()) * 5)
+local clantag = menu:switch("Clantag", false)
+    :visible(function()
+        return tabs:get() == "Misc"
+    end)
+    :add_callback("setup_command", function()
+        local curtime = math.floor((globals.curtime()) * 6 )
         local tag_string = anim_txt[curtime % #anim_txt + 1]
         if tag_string ~= old_tag_string then
             client.set_clan_tag(tag_string)
             old_tag_string = tag_string
             can_reset = true
-        end
-    else
         if can_reset then
             client.set_clan_tag(" ")
             can_reset = false
         end
     end
-end
--- local topromokillsays = 0
--- local function trashtalktest()
---     if topromokillsays then tpromokillsays = promokillsays end
--- end
+end)
 
 
-local trashtalk = {}
-local function trashtalk(e)
-    if not ui.get(menu.misc.killsay) then return end
-    if ui.get(menu.misc.killsay_types) == "Promotional" then
-        trashtalk = promokillsays
-    elseif ui.get(menu.misc.killsay_types) == "Fun" then
-        trashtalk = funkillsays
-    elseif ui.get(menu.misc.killsay_types) == "Trashtalk" then
-        trashtalk = trashkillsays
-    end
-    -- Need to figure out appending to a table multiple killsays in order to make it work as a multiselect. This elseif chain is NOT permanent. --NKill
-    -- trashtalk = {table.unpack(ttrashkillsays),table.unpack(tfunkillsays), table.unpack(tpromokillsays)}
+-- on shutdown fixing and print on full load
 
-    local attacker, victim = client.userid_to_entindex(e.attacker), client.userid_to_entindex(e.userid)
-    if attacker == global_vars.local_player and entity.is_enemy(victim) then
-        client.exec("say ", trashtalk[math.random(1, #trashtalk)])
-    end
-end
 
-local logs = {
-    intended_dmg = 0,
-    intended_hitgroup = nil,
-    tp = nil,
-    bt = 0,
-    goodornot = ""
-}
--- extractor is meant to take some values on fire to be compared to the ones on hit/miss to determine if it's a severe mismatch(like hitting under an intended damage that was supposed to kill the enemy, if it were a min dmg it could just be ignored.). This is different as the usual method such as in the public hitlog lua gives an inaccurate backtrack amount(Long explanation which I can't remember exactly verbatim). --NKill(info from Valee1337)
-local function extractor(e)
-    logs.bt = e.backtrack
-    logs.intended_hitgroup = named_hitgroups[e.hitgroup + 1]
-    logs.intended_dmg = e.damage
-    logs.tp = e.teleported
-    -- if logs.tp == nil then logs.tp = "false" end
+events.shutdown:set(function()
+    client.set_cvar("r_aspectratio", 0)
+    client.set_cvar("viewmodel_offset_x", 1)
+    client.set_cvar("viewmodel_offset_y", 1)
+    client.set_cvar("viewmodel_offset_z", -1.5)
+    client.set_cvar("viewmodel_fov", 60)
+    utils.print(PREFIX, string.format("See you next time, %s.", utils.name()))
+end)
 
-    time_to_ticks = function(e)
-        return math.floor(0.5 + (logs.bt / globals.tickinterval()))
-    end
-    -- print(intended_hitgroup)
-end
-
-local r, g, b = ui.get(refs.menu_color)
-liberation_console = client.color_log(r, g, b, "Liberation •\0")
--- HIT AND MISS LOG DON'T WORK PROPERLY
-local function hit(e)
-    local intended_txt = ""
-    local hitgroup_name = named_hitgroups[e.hitgroup + 1] or '?'
-    local hitgroup_txt = ("in the " .. hitgroup_name)
-    if hitgroups == "generic" then hitgroup_txt = ("in " .. named_hitgroups) end
-
-    if not ui.get(menu.misc.logs, "Hit") then return end
-    logs.goodornot = "✓"
-    if logs.intended_dmg ~= e.damage and e.damage < 100 and entity.get_prop(e.target, 'm_iHealth') == 100 then logs.goodornot = "‼" end
-    local aleph = (", Intended hitbox: ".. logs.intended_hitgroup)
-    if logs.intended_dmg ~= e.damage and e.damage < 100 and entity.get_prop(e.target, 'm_iHealth') == 100 then intended_txt = string.format("[Intended damage: %s]", logs.intended_dmg, aleph) 
-    end
-    if logs.intended_hitgroup ~= e.hitgroup and e.damage < 100 and entity.get_prop(e.target, 'm_iHealth') == 100 then intended_txt = string.format("[Intended damage: %s%s]", logs.intended_dmg, aleph) 
-    end
-
-    client.log(string.format("[%s] Hit %s %s, dealing %s damage(%s health left)%s(tp: %s)(hc: %d, bt: %st(%sms))", logs.goodornot, entity.get_player_name(e.target), hitgroup_txt, e.damage, entity.get_prop(e.target, 'm_iHealth'), intended_txt, logs.tp, e.hit_chance, time_to_ticks(logs.bt), logs.bt)) -- sorry for the length
-end
-
-local function miss(e)
-
-    if not ui.get(menu.misc.logs, "Miss") then return end
-    local hitgroup_name = named_hitgroups[e.hitgroup + 1] or '?'
-    local missreason = e.reason
-    if missreason == "?" then
-        missreason = "correction" -- stopping skeet from lying, one fix at a time
-    end
-        client.log(string.format("[✗] Missed %s's %s due to %s(tp: %s)(hc: %d, bt: %st(%sms)", entity.get_player_name(e.target), hitgroup_name, missreason, logs.tp, e.hit_chance, time_to_ticks(logs.bt), logs.bt))
-end
-
--- |Callbacks|
-
--- local function on_setup_command(cmd)
-local function on_paint()
-    global_vars.local_player = entity.get_local_player()
-    if not global_vars.local_player then 
-        return
-    end
-end
-local function on_setup_command(cmd)
-    clantag(cmd)
-end
-
-local local_player = entity.get_player_name(entity.get_local_player())
-if local_player == "unknown" then local_player = "Player" end
-
-local function on_shutdown()
-    client.set_clan_tag("")
-    client.log(string.format(" See you next time, %s.", local_player))
-end
-client.set_event_callback("paint_ui", on_paint)
-client.set_event_callback("setup_command", on_setup_command)
-client.set_event_callback("aim_fire", extractor)
-client.set_event_callback("aim_miss", miss)
-client.set_event_callback("player_death", trashtalk)
-client.set_event_callback("aim_hit", hit)
-client.set_event_callback("shutdown", on_shutdown)
-client.log(string.format(" Fully loaded, %s. Welcome to Liberation.", local_player))
+utils.print(PREFIX, string.format("Fully loaded, %s. Welcome to Liberation.", utils.name()))
