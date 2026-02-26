@@ -4,11 +4,7 @@
 -- |Libraries|
 
 
-local lapi_check, lapi = pcall(require "gamesense/lapi")
---@todo: apparently error isn't working, got to figure this shit out
--- if not lapi_check then
---     error("LAPI is required for this lua, download from https://github.com/Tony1337-bit/library")
--- end
+local lapi = require "gamesense/lapi" or error("LAPI is required for this lua, download from https://github.com/Tony1337-bit/library")
 local clipboard = require("gamesense/clipboard")
 local vector = require("vector")
 
@@ -94,8 +90,6 @@ local custom_killsays = {}
 
 local menu = lui.group("LUA", "A")
 local tabs = menu:combo("Tab", "Main", "Visuals", "Misc")
-
-
 -- [Main]
 
 
@@ -110,7 +104,7 @@ local accent_color = menu:color_picker("Accent Color", ui.get(menu_color))
     :visible(function()
         return tabs:get() == "Main"
     end)
-    :callback(function(col)
+    :add_callback("paint_ui", function(col)
         ui.set(menu_color, col:get())
     end)
 
@@ -160,18 +154,20 @@ local watermark_switch = menu:switch("Watermark")
 --             }
 --     end)
 
-local txt_r, txt_g, txt_b, txt_a = {255,255,255,255} -- lazy to find out how to pass values from two separate callbacks into 1 function, so this'll do just fine -NKill
-local screen_size = vector(client.screen_size())
-local latency = math.ceil(client.latency() * 1000)
-local tickrate = math.ceil(1 / globals.tickinterval())
-local time = {client.system_time()}
-local formatted_time = string.format("%02d:%02d:%02d", time[1], time[2], time[3])
-local fps = get_fps()
+-- local txt_r, txt_g, txt_b, txt_a = 255,255,255,255 -- lazy to find out how to pass values from two separate callbacks into 1 function, so this'll do just fine -NKill
 
-local function watermark(bkg_r, bkg_g, bkg_b, bkg_a)
-    if not watermark_switch:get() then
+local function watermark(check, bkg_c, txt_c)
+    if not check then
         return
     end
+    local bkg_r, bkg_g, bkg_b, bkg_a = bkg_c:get()
+    local txt_r, txt_g, txt_b, txt_a = txt_c:get()
+    local screen_size = vector(client.screen_size())
+    local latency = math.ceil(client.latency() * 1000)
+    local tickrate = math.ceil(1 / globals.tickinterval())
+    local time = {client.system_time()}
+    local formatted_time = string.format("%02d:%02d:%02d", time[1], time[2], time[3])
+    local fps = get_fps()
 
     local watermark_txt = "liberation".. " | ".. utils.name().. " | ".. string.format("fps: %03d", fps).. " | ".. string.format("rtt: %dms", latency)..
     " | ".. string.format("rate: %d", tickrate).. " | ".. formatted_time
@@ -187,12 +183,9 @@ local watermark_background = menu:label("Watermark Background")
     :visible(function()
         return tabs:get() == "Visuals" and watermark_switch:get()
     end)
-local watermark_background_col = menu:color_picker("Watermark Background", {240,110,140,130})
+local watermark_background_col = menu:color_picker("Watermark Background", 240,110,140,130)
     :visible(function()
         return tabs:get() == "Visuals" and watermark_switch:get()
-    end)
-    :add_callback("paint", function(self) 
-        return watermark(self:get())
     end)
 
 local watermark_text = menu:label("Watermark Text")
@@ -203,9 +196,10 @@ local watermark_text_col = menu:color_picker("Watermark Text", 240, 160, 180, 25
     :visible(function()
         return tabs:get() == "Visuals" and watermark_switch:get()
     end)
-    :callback(function(self)
-        txt_r, txt_g, txt_b, txt_a = self:get()
-    end)
+
+events.paint:set(function()
+    watermark(watermark_switch:get(), watermark_background_col, watermark_text_col)
+end)
 
 -- Aspect Ratio + its value that is visible only when switch is on
 
@@ -407,19 +401,42 @@ end)
 
 local old_tag_string = nil
 local can_reset = false
--- This could probably be optimized size-wise, I have no idea how however. -- NKill
-local anim_txt = {"✰ ", "✰ _", "✰ _", "✰ L_", "✰ L_", "✰ Li_", "✰ Li_", "✰ Lib_", "✰ Lib_", "✰ Libe_", "✰ Libe_",
- "✰ Liber_", "✰ Liber_", "✰ Libera_", "✰ Libera_","✰ Liberat_","✰ Liberat_", "✰ Liberati_", "✰ Liberati_","✰ Liberatio_", 
- "✰ Liberatio_","✰ Liberation_", "✰ Liberation _", "✰ Liberation ", "✰ Liberation _", "✰ Liberation ", "✰ Liberation_",
- "✰ Liberatio_", "✰ Liberatio_","✰ Liberati_", "✰ Liberati_", "✰ Liberat_", "✰ Liberat_", "✰ Libera_", "✰ Libera_", "✰ Liber_", 
- "✰ Liber_", "✰ Libe_","✰ Libe_", "✰ Lib_", "✰ Lib_", "✰ Li_", "✰ Li_", "✰ L_", "✰ L_", "✰ _", "✰ _", "✰ "}
 
+local function create_clantag_animation()
+    local anim = {}
+
+    local text, prefix = "Liberation", "✰ "
+    local cursor = {"_", " ", "_", " "}
+
+    for i = 0, #text do
+        if i > 0 then
+            table.insert(anim, prefix .. text:sub(1, i) .. "_")
+        else
+            table.insert(anim, prefix .. "_")
+        end
+    end
+
+    for _, pos in ipairs(cursor) do 
+        table.insert(anim, prefix .. text .. pos) end
+
+    table.insert(anim, prefix .. text .. " ")
+    table.insert(anim, prefix .. text .. "_")
+
+    for i = #text, 1, -1 do
+        table.insert(anim, prefix .. text:sub(1, i - 1) .. "_")
+    end
+
+    table.insert(anim, prefix)
+    return anim
+end
+
+local anim_txt = create_clantag_animation()
 local clantag = menu:switch("Clantag", false)
     :visible(function()
         return tabs:get() == "Misc"
     end)
     :add_callback("setup_command", function()
-        local curtime = math.floor((globals.curtime()) * 6 )
+        local curtime = math.floor((globals.curtime()) * 3)
         local tag_string = anim_txt[curtime % #anim_txt + 1]
         if tag_string ~= old_tag_string then
             client.set_clan_tag(tag_string)
