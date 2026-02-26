@@ -161,17 +161,17 @@ local watermark_switch = menu:switch("Watermark")
 --     end)
 
 local txt_r, txt_g, txt_b, txt_a = {255,255,255,255} -- lazy to find out how to pass values from two separate callbacks into 1 function, so this'll do just fine -NKill
+local screen_size = vector(client.screen_size())
+local latency = math.ceil(client.latency() * 1000)
+local tickrate = math.ceil(1 / globals.tickinterval())
+local time = {client.system_time()}
+local formatted_time = string.format("%02d:%02d:%02d", time[1], time[2], time[3])
+local fps = get_fps()
 
 local function watermark(bkg_r, bkg_g, bkg_b, bkg_a)
     if not watermark_switch:get() then
         return
     end
-    local screen_size = vector(client.screen_size())
-    local latency = math.ceil(client.latency() * 1000)
-    local tickrate = math.ceil(1 / globals.tickinterval())
-    local time = {client.system_time()}
-    local formatted_time = string.format("%02d:%02d:%02d", time[1], time[2], time[3])
-    local fps = get_fps()
 
     local watermark_txt = "liberation".. " | ".. utils.name().. " | ".. string.format("fps: %03d", fps).. " | ".. string.format("rtt: %dms", latency)..
     " | ".. string.format("rate: %d", tickrate).. " | ".. formatted_time
