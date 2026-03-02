@@ -15,6 +15,7 @@ local PREFIX = "Liberation"
 local DIRECTORY = filesystem.get_game_directory() 
 local USER_NAME = utils.name()
 local SCREEN_SIZE = vector(client.screen_size())
+local LOCAL_PLAYER = entity.get_local_player()
 
 -- | References |
 
@@ -124,8 +125,9 @@ local accent_color = menu:color_picker("Accent Color", ui.get(refs.menu_color))
 -- [Visuals]
 
 
--- Watermark 
+-- Widgets, contains Watermark and Spectator list(for now) in that order
 
+-- Watermark subsection
 local function get_fps()
     if globals.frametime() > 0 then
         return math.ceil(1 / globals.frametime())
@@ -133,13 +135,18 @@ local function get_fps()
     return 0
 end
 
-local watermark_switch = menu:switch("Watermark")
+local widget_switch = menu:switch("Widgets")
     :visible(function()
         return tabs:get() == "Visuals"
     end)
+local widget_types = menu:selectable("Widget Types", "Watermark", "Spectators list")
+    :visible(function()
+    return tabs:get() == "Visuals" and widget_switch:get()
+    end)
+
 local watermark_types = menu:selectable("Watermark Addons", "Script Name", "Name", "FPS", "Ping", "Tick Rate", "Time(24h)")
     :visible(function() 
-        return tabs:get() == "Visuals" and watermark_switch:get()
+        return tabs:get() == "Visuals" and widget_types:get("Watermark") and widget_switch:get()
     end)
 
 local watermark_map = function()
@@ -193,26 +200,71 @@ local function watermark(check, bkg_c, txt_c)
     renderer.text(SCREEN_SIZE.x - text_size.x - 15, 13, txt_r, txt_g, txt_b, txt_a, "d", 0, watermark_txt)
 end
 
-local watermark_background = menu:label("Watermark Background")
+local widget_background = menu:label("Widget Background")
     :visible(function()
-        return tabs:get() == "Visuals" and watermark_switch:get()
+        return tabs:get() == "Visuals" and widget_types:get("Watermark")
     end)
-local watermark_background_col = menu:color_picker("Watermark Background", 240,110,140,130)
+local widget_background_col = menu:color_picker("Watermark Background", 240,110,140,130)
     :visible(function()
-        return tabs:get() == "Visuals" and watermark_switch:get()
+        return tabs:get() == "Visuals" and widget_types:get("Watermark")
     end)
 
-local watermark_text = menu:label("Watermark Text")
+local widget_text = menu:label("Widget Text")
     :visible(function()
-        return tabs:get() == "Visuals" and watermark_switch:get()
+        return tabs:get() == "Visuals" and widget_types:get("Watermark")
     end)
-local watermark_text_col = menu:color_picker("Watermark Text", 240, 160, 180, 250)
+local widget_txt_col = menu:color_picker("Watermark Text", 240, 160, 180, 250)
     :visible(function()
-        return tabs:get() == "Visuals" and watermark_switch:get()
+        return tabs:get() == "Visuals" and widget_types:get("Watermark")
     end)
+
+-- Spectator Subsection
+local spectator_x = menu:slider("Spectator X", 0, SCREEN_SIZE.x, SCREEN_SIZE.x / 4, true, "px")
+    :visible(function()
+        return tabs:get() == "Visuals" and widget_types:get("Spectators list")
+    end)
+local spectator_y = menu:slider("Spectator Y", 0, SCREEN_SIZE.y, SCREEN_SIZE.y / 4, true, "px")
+    :visible(function()
+        return tabs:get() == "Visuals" and widget_types:get("Spectators list")
+    end)
+
+local function get_spectators()
+    local spectators = {}
+    local local_player = entity.get_prop(LOCAL_PLAYER, "m_hObserverTarget")
+
+    ent = 1
+    for ent = 1, 65 do
+        local target_player = entity.get_prop(ent, "m_hObserverTarget")
+        
+        if target_player == local_player then
+            local spectator = entity.get_player_name(ent)
+            table.insert(spectators, {spectator = spectator, ent = ent})
+        end
+    end
+    return spectators
+end
+
+local function spectators_list(check, bkg_c, txt_c)
+    if not check then
+        return
+    end
+
+    local bkg_r, bkg_g, bkg_b, bkg_a = bkg_c:get()
+    local txt_r, txt_g, txt_b, txt_a = txt_c:get()
+    local spectators = get_spectators()
+    local spectator_txt = "Spectators"
+    local text_size = vector(renderer.measure_text("d", spectator_txt))
+    -- x,y, width, height, r,g,b,a(I am fucking sick of looking on the docs constantly)
+    renderer.rectangle(spectator_x:get() - text_size.x - 40, spectator_y:get(), text_size.x + 80, text_size.y + 8, bkg_r, bkg_g, bkg_b, bkg_a)
+    renderer.text(spectator_x:get() - text_size.x - 0, spectator_y:get() + 3, txt_r, txt_g, txt_b, txt_a, "d", 0, spectator_txt)
+    renderer.text(spectator_x:get() - text_size.x, spectator_y:get() - 20, 255,255,255,255, "d", 0, spectators)
+end
+-- Keybinds subsection, later...
+
 
 events.paint:set(function()
-    watermark(watermark_switch:get(), watermark_background_col, watermark_text_col)
+    watermark(widget_types:get("Watermark"), widget_background_col, widget_txt_col)
+    spectators_list(widget_types:get("Spectators list"), widget_background_col, widget_txt_col)
 end)
 
 -- Aspect Ratio + its value that is visible only when switch is on
@@ -231,7 +283,7 @@ local aspect_ratio_value = menu:slider("Aspect Ratio Value", 0, 250, 150, true, 
         return aspect_ratio:get() and tabs:get() == "Visuals"
     end)
     :callback(function(obj)
-        if not entity.is_alive(entity.get_local_player()) then
+        if not entity.is_alive(LOCAL_PLAYER) then
             return
         end
         client.set_cvar("r_aspectratio", obj:get() / 100)
@@ -346,7 +398,7 @@ local viewmodel_fov = menu:slider("Viewmodel FOV", 50, 120, pre_change_fov, true
 --         local attacker = client.userid_to_entindex(e.attacker)
 --         local victim = client.userid_to_entindex(e.userid)
     
---         if attacker ~= entity.get_local_player() then 
+--         if attacker ~= LOCAL_PLAYER then 
 --             return 
 --         end
 --         if not entity.is_enemy(victim) then 
@@ -529,7 +581,7 @@ client.set_event_callback("player_death", function(e)
     local attacker = client.userid_to_entindex(e.attacker)
     local victim = client.userid_to_entindex(e.userid)
 
-    if attacker ~= entity.get_local_player() then return end
+    if attacker ~= LOCAL_PLAYER then return end
     if not entity.is_enemy(victim) then return end
 
     local killsays = get_active_killsays()
