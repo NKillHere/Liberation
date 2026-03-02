@@ -12,6 +12,19 @@ local vector = require("vector")
 
 local NAMED_HITGROUPS = {"generic", "head", "chest", "stomach", "left arm", "right arm", "left leg","right leg", "neck", "?", "gear"}
 local PREFIX = "Liberation"
+local DIRECTORY = filesystem.get_game_directory() 
+local USER_NAME = utils.name()
+local SCREEN_SIZE = vector(client.screen_size())
+
+-- | References |
+
+local refs = {
+    menu_color = ui.reference("MISC", "Settings", "Menu color"),
+    default_hitsound = ui.reference("Visuals", "Player ESP", "Hit marker sound"),
+    min_dmg = ui.reference("RAGE", "Aimbot", "Minimum damage"),
+    min_dmg_ovr = {ui.reference("RAGE", "Aimbot", "Minimum damage override")} -- [1] is checkbox, bool, [2] is the keybind state, bool and [3] is the value, int
+}
+
 -- |Variables|
 
 local promo_killsays = {
@@ -86,26 +99,25 @@ local fun_killsays = {
     "HvH Highlights #7000 feat. (insert paste here)"
 }
 local custom_killsays = {}
-
+filesystem.add_search_path(filesystem.get_game_directory(), "csgo", 0) -- I really have no clue what this does, if it breaks it's on me. -NKill
 
 local menu = lui.group("LUA", "A")
+local side_menu = lui.group("LUA", "B")
 local tabs = menu:combo("Tab", "Main", "Visuals", "Misc")
 -- [Main]
 
-
-local menu_color = ui.reference("MISC", "Settings", "Menu color") 
 
 menu:label("Accent Color")
 :visible(function()
     return tabs:get() == "Main"
 end)
 
-local accent_color = menu:color_picker("Accent Color", ui.get(menu_color))
+local accent_color = menu:color_picker("Accent Color", ui.get(refs.menu_color))
     :visible(function()
         return tabs:get() == "Main"
     end)
     :add_callback("paint_ui", function(col)
-        ui.set(menu_color, col:get())
+        ui.set(refs.menu_color, col:get())
     end)
 
 
@@ -125,36 +137,43 @@ local watermark_switch = menu:switch("Watermark")
     :visible(function()
         return tabs:get() == "Visuals"
     end)
--- local watermark_types = menu:selectable("Watermark Addons", "Script Name", "Name", "FPS", "Ping", "Tick Rate", "Time(24h)")
---     :visible(function()
---         return tabs:get() == "Visuals" and watermark_switch:get()
---     end)
---     :callback(function()
---         local state = {}
---         local sname, name = "", ""
---         local map = {
---             ["Script Name"] = function()
---                 sname = "liberation" or ""
---             end
---             ["Name"] = function()
---                 name = utils.name() or ""
---             end
---             ["FPS"] = function()
---                 fps = get_fps() or ""
---             end
---             ["Ping"] = function()
---                 latency = math.ceil(client.latency() * 1000)
---             end
---             ["Tick Rate"] = function()
---                 tickrate = math.ceil(1 / globals.tickinterval())
---             end
---             ["Time(24h)"] = function()
---                 local time = {client.system_time()}
---             end
---             }
---     end)
+local watermark_types = menu:selectable("Watermark Addons", "Script Name", "Name", "FPS", "Ping", "Tick Rate", "Time(24h)")
+    :visible(function() 
+        return tabs:get() == "Visuals" and watermark_switch:get()
+    end)
 
--- local txt_r, txt_g, txt_b, txt_a = 255,255,255,255 -- lazy to find out how to pass values from two separate callbacks into 1 function, so this'll do just fine -NKill
+local watermark_map = function()
+    local state = {}
+    if watermark_types:get("Script Name") then
+        table.insert(state, "liberation")
+    end
+    if watermark_types:get("Name") then
+        table.insert(state, USER_NAME)
+    end
+    if watermark_types:get("FPS") then
+        local watermark_fps = string.format("fps: %03d", get_fps())
+        table.insert(state, watermark_fps)
+    end
+    if watermark_types:get("Ping") then
+        local ping = math.ceil(client.real_latency() * 1000)
+        if math.ceil(client.latency() * 1000) == 0 then
+            ping = 0 
+        end
+        local watermark_ping = string.format("rtt: %dms", ping)
+        table.insert(state, watermark_ping)
+    end
+    if watermark_types:get("Tick Rate") then
+        local watermark_tickrate = string.format("rate: %d", math.ceil(1 / globals.tickinterval()))
+        table.insert(state, watermark_tickrate)
+    end
+    if watermark_types:get("Time(24h)") then
+        local time = {client.system_time()}
+        local watermark_time = string.format("%02d:%02d:%02d", time[1], time[2], time[3])
+        table.insert(state, watermark_time)
+    end
+
+    return #state > 0 and table.concat(state, " | " or "Liberation")
+end
 
 local function watermark(check, bkg_c, txt_c)
     if not check then
@@ -162,21 +181,16 @@ local function watermark(check, bkg_c, txt_c)
     end
     local bkg_r, bkg_g, bkg_b, bkg_a = bkg_c:get()
     local txt_r, txt_g, txt_b, txt_a = txt_c:get()
-    local screen_size = vector(client.screen_size())
-    local latency = math.ceil(client.latency() * 1000)
-    local tickrate = math.ceil(1 / globals.tickinterval())
-    local time = {client.system_time()}
-    local formatted_time = string.format("%02d:%02d:%02d", time[1], time[2], time[3])
-    local fps = get_fps()
 
-    local watermark_txt = "liberation".. " | ".. utils.name().. " | ".. string.format("fps: %03d", fps).. " | ".. string.format("rtt: %dms", latency)..
-    " | ".. string.format("rate: %d", tickrate).. " | ".. formatted_time
-    
-    local text_size = vector(renderer.measure_text(nil, watermark_txt))
+    local watermark_txt = watermark_map()
+    if watermark_txt == false then
+        watermark_txt = "liberation"
+    end
+    local text_size = vector(renderer.measure_text("d", watermark_txt))
 
-    renderer.rectangle(screen_size.x - text_size.x - 20, 10, text_size.x + 10, text_size.y + 8, bkg_r, bkg_g, bkg_b, bkg_a)
+    renderer.rectangle(SCREEN_SIZE.x - text_size.x - 20, 10, text_size.x + 10, text_size.y + 8, bkg_r, bkg_g, bkg_b, bkg_a)
 
-    renderer.text(screen_size.x - text_size.x - 16, 13, txt_r, txt_g, txt_b, txt_a, "d", 0, watermark_txt)
+    renderer.text(SCREEN_SIZE.x - text_size.x - 15, 13, txt_r, txt_g, txt_b, txt_a, "d", 0, watermark_txt)
 end
 
 local watermark_background = menu:label("Watermark Background")
@@ -297,6 +311,134 @@ local viewmodel_fov = menu:slider("Viewmodel FOV", 50, 120, pre_change_fov, true
 
 -- [Misc]
 
+-- Hitsound on hit and on kill Not working due to playing sounds being a mess -NKill
+
+-- if not filesystem.is_directory(DIRECTORY.."liberation/sounds", "csgo")
+--     then 
+--         utils.print(PREFIX, "Liberation directory does not exist, creating...")
+--         filesystem.create_directory("liberation/sounds", "csgo")
+-- else 
+--     filesystem.add_search_path(DIRECTORY.."liberation/sounds", "sounds", 1)
+-- end
+-- local function hitsound_refresh() -- Still doesn't showcase for some fucking reason, have to ask mobby what the fuck this does then
+--     hitsounds = filesystem.list_files(filesystem, DIRECTORY.."liberation/sounds")
+--     return hitsounds
+-- end
+
+-- local hitsound_choice = ""
+-- local killsound_choice = ""
+-- local hitsound_list_choice = ""
+-- local killsound_list_choice = ""
+
+-- local hitsound_switch = menu:switch("Custom Hitsound")
+--     :visible(function()
+--         return tabs:get() == "Misc"
+--     end)
+-- local hitsound_types = side_menu:selectable("Hitsound types", {"On hit", "On kill"})
+--     :visible(function()
+--         return hitsound_switch:get() and tabs:get() == "Misc"
+--     end)
+--     :add_callback("player_death", function(e)
+--         if e:get() == "On kill" or killsound_list_choice == "" then
+--             return
+--         end
+
+--         local attacker = client.userid_to_entindex(e.attacker)
+--         local victim = client.userid_to_entindex(e.userid)
+    
+--         if attacker ~= entity.get_local_player() then 
+--             return 
+--         end
+--         if not entity.is_enemy(victim) then 
+--             return 
+--         end
+--         ui.set(refs.default_hitsound, false)
+--         can = filesystem.open(DIRECTORY.."liberation/sounds", "r", "hitsounds")
+--             --Figure out playing sounds, easiest way is to convince Mobby to add sound playing due to usefulness in luas
+--         filesystem.close(can)
+--     end)
+-- local hitsound_name = side_menu:list("Hitsounds", hitsound_refresh())
+--     :visible(function()
+--         return hitsound_switch:get() and tabs:get() == "Misc"
+--     end)
+--     :callback(function(choice)
+--         hitsound_list_choice = choice:get()
+--     end)
+-- local hitsound_refresh = side_menu:button("Refresh hitsounds", 
+--     function()
+--         hitsound_refresh()
+--     end)
+--     :visible(function()
+--         return tabs:get() == "Misc" and hitsound_switch:get()
+--     end)
+-- local hitsound_button = side_menu:button("Select as Hitsound", function()
+--         ui.set(refs.default_hitsound, false)
+--         hitsound_choice = hitsound_list_choice
+--     end)
+--     :visible(function()
+--         return tabs:get() == "Misc" and hitsound_types:get("On hit") and hitsound_switch:get()
+--     end)
+-- local killsound_button = side_menu:button("Select as Killsound",function()
+--         killsound_choice = killsound_list_choice
+--     end)
+--     :visible(function()
+--         return tabs:get() == "Misc" and hitsound_types:get("On kill") and hitsound_switch:get()
+--     end)
+
+-- Logs
+
+local logs = {
+    intended_dmg = 0,
+    intended_hitgroup = nil,
+    tp = false,
+    bt = nil
+}
+
+local logs_switch = menu:switch("Logs")
+    :visible(function()
+        return tabs:get() == "Misc"
+    end)
+    :add_callback("aim_fire", function(obj, e) -- obj is the switch state
+        logs.bt = math.floor(globals.tickcount() - e.tick)
+        logs.intended_hitgroup = NAMED_HITGROUPS[e.hitgroup + 1]
+        logs.intended_dmg = e.damage
+        logs.tp = e.teleported
+        return logs.bt, logs.intended_hitgroup, logs.intended_dmg, logs.tp
+    end)
+    :add_callback("aim_hit", function(obj, e)
+        entity_hp = entity.get_prop(e.target, 'm_iHealth')
+
+        local hitgroup_name = NAMED_HITGROUPS[e.hitgroup + 1] or '?'
+        hitgroup_txt = ("in the ".. hitgroup_name)
+        if hitgroup_name == "generic" or "gear" then
+            hitgroup_txt = ("in ".. hitgroup_name)
+        end
+        mismatch_check = "✔"
+        intended_txt = ""
+
+        if e.damage ~= logs.intended_dmg and logs.intended_dmg >= entity_hp and e.damage < entity_hp or ui.get(refs.min_dmg_ovr[2]) and e.damage < ui.get(refs.min_dmg_ovr[3]) then -- This SHOULD be correct, but do make a PR if smth is wrong -NKill
+            logs.mismatch_check = "‼"
+            print("DEBUG: intended hg: ", logs.intended_hitgroup, " | ", "intended dmg:", logs.intended_dmg) -- I have NO fucking clue why this isn't working properly, this debug feature will stick until then
+            intended_txt = string.format("[Intended damage: %d]", logs.intended_dmg)
+            if logs.intended_hitgroup ~= e.hitgroup then
+                intended_txt = string.format("[Intended damage: %d, %s]", logs.intended_dmg, logs.intended_hitgroup)
+            end
+        end
+
+        utils.print(PREFIX, string.format("[%s] Hit %s %s, dealing %d damage(%d health left) %s (tp: %s | hc: %d%% | bt: %dt [%dms])",
+        mismatch_check, entity.get_player_name(e.target), hitgroup_txt, e.damage, entity_hp, intended_txt, logs.tp, e.hit_chance, logs.bt,
+        math.floor(totime(logs.bt) * 1000)))
+    end)
+    :add_callback("aim_miss", function(obj, e)
+        local hitgroup_name = NAMED_HITGROUPS[e.hitgroup + 1] or '?'
+        local missreason = e.reason
+            if missreason == "?" then
+                missreason = "resolver" -- nice try skeet
+            end
+
+        utils.print(PREFIX, string.format("[X] Missed %s's %s due to %s (tp: %s | hc: %d%% | bt:%st [%dms])", 
+        entity.get_player_name(e.target), hitgroup_name, missreason, logs.tp, e.hit_chance, logs.bt, math.floor(totime(logs.bt) * 1000)))
+    end)
 
 -- Overengineered Killsay
 
@@ -338,7 +480,7 @@ local killsay_types = menu:selectable("Killsay Types", {"Promotional", "Trashtal
 end)
 local custom_killsay = menu:button("Import Custom Killsay List", function()
         custom_killsays = custom_killsay_import()
-end)
+    end)
     :visible(function()
         return killsay_switch:get() and tabs:get() == "Misc" and killsay_types:get("Custom")
     end)
@@ -435,6 +577,11 @@ local clantag = menu:switch("Clantag", false)
     :visible(function()
         return tabs:get() == "Misc"
     end)
+    :callback(function(e)
+        if e:get() == false then
+            client.set_clan_tag("")
+        end
+    end)
     :add_callback("setup_command", function()
         local curtime = math.floor((globals.curtime()) * 3)
         local tag_string = anim_txt[curtime % #anim_txt + 1]
@@ -442,14 +589,12 @@ local clantag = menu:switch("Clantag", false)
             client.set_clan_tag(tag_string)
             old_tag_string = tag_string
             can_reset = true
-        if can_reset then
-            client.set_clan_tag(" ")
-            can_reset = false
+                if can_reset then
+                    client.set_clan_tag(" ")
+                    can_reset = false
+                end
         end
-    end
-end)
-
-
+    end)
 -- on shutdown fixing and print on full load
 
 
@@ -459,7 +604,9 @@ events.shutdown:set(function()
     client.set_cvar("viewmodel_offset_y", 1)
     client.set_cvar("viewmodel_offset_z", -1.5)
     client.set_cvar("viewmodel_fov", 60)
-    utils.print(PREFIX, string.format("See you next time, %s.", utils.name()))
+    client.set_clan_tag("")
+    ui.set(refs.default_hitsound, true)
+    utils.print(PREFIX, string.format("See you next time, %s.", USER_NAME))
 end)
 
-utils.print(PREFIX, string.format("Fully loaded, %s. Welcome to Liberation.", utils.name()))
+utils.print(PREFIX, string.format("Fully loaded, %s. Welcome to Liberation.", USER_NAME))
