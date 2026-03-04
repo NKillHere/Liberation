@@ -8,4 +8,4 @@ Clipboard
 
 ## Installation:  
 1. Download the latest version from the [Releases](https://github.com/NKillHere/Liberation/releases) tab (Non-neophyte recommended)
-2. Place in your csgo/lua directory
+2. Place in your lua directory (whether it be csgo directory or csgo/lua directory)
