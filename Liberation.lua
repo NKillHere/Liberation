@@ -15,15 +15,21 @@ local PREFIX = "Liberation"
 local DIRECTORY = filesystem.get_game_directory() 
 local USER_NAME = utils.name()
 local SCREEN_SIZE = vector(client.screen_size())
+local MID_SCREEN = vector(SCREEN_SIZE.x /2, SCREEN_SIZE.y / 2)
 local LOCAL_PLAYER = entity.get_local_player()
 
 -- | References |
-
+-- This is actually structured, it goes from visual/audio stuff(menu color/hitsound), Aimbot functions, Anti-aim stuffs
 local refs = {
     menu_color = ui.reference("MISC", "Settings", "Menu color"),
     default_hitsound = ui.reference("Visuals", "Player ESP", "Hit marker sound"),
     min_dmg = ui.reference("RAGE", "Aimbot", "Minimum damage"),
-    min_dmg_ovr = {ui.reference("RAGE", "Aimbot", "Minimum damage override")} -- [1] is checkbox, bool, [2] is the keybind state, bool and [3] is the value, int
+    min_dmg_ovr = {ui.reference("RAGE", "Aimbot", "Minimum damage override")}, -- [1] is checkbox, bool, [2] is the keybind state, bool and [3] is the value, int
+    double_tap = {ui.reference("RAGE", "Aimbot", "Double tap")},
+    hide_shots = {ui.reference("AA", "Other", "On shot anti-aim")},
+    freestanding = {ui.reference("AA", "Anti-aimbot angles", "Freestanding")},
+    edge_yaw = ui.reference("AA", "Anti-aimbot angles", "Edge yaw"),
+    fake_duck = ui.reference("RAGE", "Other", "Duck peek assist")
 }
 
 -- |Variables|
@@ -139,11 +145,11 @@ local widget_switch = menu:switch("Widgets")
     :visible(function()
         return tabs:get() == "Visuals"
     end)
-local widget_types = menu:selectable("Widget Types", "Watermark", "Spectators list")
+local widget_types = menu:selectable("Widget Types", "Watermark", "Spectators list", "Indicators")
     :visible(function()
     return tabs:get() == "Visuals" and widget_switch:get()
     end)
-
+    
 local watermark_types = menu:selectable("Watermark Addons", "Script Name", "Name", "FPS", "Ping", "Tick Rate", "Time(24h)")
     :visible(function() 
         return tabs:get() == "Visuals" and widget_types:get("Watermark") and widget_switch:get()
@@ -218,7 +224,7 @@ local widget_txt_col = menu:color_picker("Watermark Text", 240, 160, 180, 250)
         return tabs:get() == "Visuals" and widget_types:get("Watermark")
     end)
 
--- Spectator Subsection
+-- Spectator subsection
 local spectator_x = menu:slider("Spectator X", 0, SCREEN_SIZE.x, SCREEN_SIZE.x / 4, true, "px")
     :visible(function()
         return tabs:get() == "Visuals" and widget_types:get("Spectators list")
@@ -259,8 +265,49 @@ local function spectators_list(check, bkg_c, txt_c)
     renderer.text(spectator_x:get() - text_size.x - 0, spectator_y:get() + 3, txt_r, txt_g, txt_b, txt_a, "d", 0, spectator_txt)
     renderer.text(spectator_x:get() - text_size.x, spectator_y:get() - 20, 255,255,255,255, "d", 0, spectators)
 end
--- Keybinds subsection, later...
 
+--Indicator subsection
+-- local indicator_types = menu:selectable("Indicator Types", "List", "Under crosshair")
+--     :visible(function()
+--     return tabs:get() == "Visuals" and widget_types:get("Indicators") and widget_switch:get()
+--     end)
+-- menu:label("Indicator under crosshair color")
+--     :visible(function()
+--     return tabs:get() == "Visuals" and widget_types:get("Indicators") and indicator_types:get("Under crosshair") and widget_switch::get()
+--     end)
+-- local indicator_crosshair_color = menu:color_picker("Indicator under crosshair color", accent_color:get())
+--     :visible(function()
+--     return tabs:get() == "Visuals" and widget_types:get("Indicators") and indicator_types:get("Under crosshair") and widget_switch:get()
+--     end)
+
+-- local function get_indicators() --the rendering will have to be done through a for loop within the draw function to set the Y axis, this SHOULD work, if not I got another method -NKill
+--     local crosshair_indicators = {}
+--     local indicators = {}
+--     if ui.get(refs.min_dmg_ovr[2]) then
+--         local new_dmg = ui.get(refs.min_dmg_ovr)
+--         table.insert(crosshair_indicators, "DMG")
+--         table.insert(indicators, "Minimum Damage: ".. new_dmg)
+--     end
+--     if ui.get(refs.edge_yaw) then
+--         table.insert(crosshair_indicators, "EDGE")
+--         table.insert(indicators, "Edge Yaw")
+--     elseif ui.get(refs.freestanding[2]) then
+--         table.insert(crosshair_indicators, "FS")
+--         table.insert(indicators, "Freestanding")
+--     end
+--     if ui.get(refs.fake_duck) then
+--         table.insert(crosshair_indicators, "FD")
+--         table.insert(indicators, "Fake Duck")
+--     elseif ui.get(refs.double_tap[2]) then
+--         table.insert(crosshair_indicators, "DT")
+--         table.insert(indicators, "Double Tap")
+--     elseif ui.get(refs.hide_shots[2]) then
+--         table.insert(crosshair_indicators, "HS")
+--         table.insert(indicators, "Hide Shots")
+--     end
+-- end
+-- local function crosshair_indicator() -- Will do later
+-- end
 
 events.paint:set(function()
     watermark(widget_types:get("Watermark"), widget_background_col, widget_txt_col)
