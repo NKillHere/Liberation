@@ -118,7 +118,6 @@ menu:label("Accent Color")
 :visible(function()
     return tabs:get() == "Main"
 end)
-
 local accent_color = menu:color_picker("Accent Color", ui.get(refs.menu_color))
     :visible(function()
         return tabs:get() == "Main"
@@ -126,7 +125,10 @@ local accent_color = menu:color_picker("Accent Color", ui.get(refs.menu_color))
     :add_callback("paint_ui", function(col)
         ui.set(refs.menu_color, col:get())
     end)
-
+menu:label("Spectators list isn't working atm, will fix")
+    :visible(function()
+    return tabs:get() == "Main"
+    end)
 
 -- [Visuals]
 
@@ -217,7 +219,7 @@ local widget_background_col = menu:color_picker("Watermark Background", 240,110,
 
 local widget_text = menu:label("Widget Text")
     :visible(function()
-        return tabs:get() == "Visuals" and widget_types:get("Watermark")
+        return tabs:get() == "Visuals" and widget_types:get("Watermark" or "Spectator list" or "Indicators")
     end)
 local widget_txt_col = menu:color_picker("Watermark Text", 240, 160, 180, 250)
     :visible(function()
@@ -225,14 +227,14 @@ local widget_txt_col = menu:color_picker("Watermark Text", 240, 160, 180, 250)
     end)
 
 -- Spectator subsection
-local spectator_x = menu:slider("Spectator X", 0, SCREEN_SIZE.x, SCREEN_SIZE.x / 4, true, "px")
-    :visible(function()
-        return tabs:get() == "Visuals" and widget_types:get("Spectators list")
-    end)
-local spectator_y = menu:slider("Spectator Y", 0, SCREEN_SIZE.y, SCREEN_SIZE.y / 4, true, "px")
-    :visible(function()
-        return tabs:get() == "Visuals" and widget_types:get("Spectators list")
-    end)
+-- local spectator_x = menu:slider("Spectator X", 0, SCREEN_SIZE.x, SCREEN_SIZE.x / 4, true, "px")
+--     :visible(function()
+--         return tabs:get() == "Visuals" and widget_types:get("Spectators list")
+--     end)
+-- local spectator_y = menu:slider("Spectator Y", 0, SCREEN_SIZE.y, SCREEN_SIZE.y / 4, true, "px")
+--     :visible(function()
+--         return tabs:get() == "Visuals" and widget_types:get("Spectators list")
+--     end)
 
 local function get_spectators()
     local spectators = {}
@@ -267,51 +269,76 @@ local function spectators_list(check, bkg_c, txt_c)
 end
 
 --Indicator subsection
--- local indicator_types = menu:selectable("Indicator Types", "List", "Under crosshair")
---     :visible(function()
---     return tabs:get() == "Visuals" and widget_types:get("Indicators") and widget_switch:get()
---     end)
--- menu:label("Indicator under crosshair color")
---     :visible(function()
---     return tabs:get() == "Visuals" and widget_types:get("Indicators") and indicator_types:get("Under crosshair") and widget_switch::get()
---     end)
--- local indicator_crosshair_color = menu:color_picker("Indicator under crosshair color", accent_color:get())
---     :visible(function()
---     return tabs:get() == "Visuals" and widget_types:get("Indicators") and indicator_types:get("Under crosshair") and widget_switch:get()
---     end)
+local indicator_types = menu:selectable("Indicator Types", "List", "Under crosshair")
+    :visible(function()
+    return tabs:get() == "Visuals" and widget_types:get("Indicators") and widget_switch:get()
+    end)
+menu:label("Indicator under crosshair color")
+    :visible(function()
+    return tabs:get() == "Visuals" and widget_types:get("Indicators") and indicator_types:get("Under crosshair") and widget_switch:get()
+    end)
+local indicator_crosshair_color = menu:color_picker("Indicator under crosshair color", accent_color:get())
+    :visible(function()
+    return tabs:get() == "Visuals" and widget_types:get("Indicators") and indicator_types:get("Under crosshair") and widget_switch:get()
+    end)
 
--- local function get_indicators() --the rendering will have to be done through a for loop within the draw function to set the Y axis, this SHOULD work, if not I got another method -NKill
---     local crosshair_indicators = {}
---     local indicators = {}
---     if ui.get(refs.min_dmg_ovr[2]) then
---         local new_dmg = ui.get(refs.min_dmg_ovr)
---         table.insert(crosshair_indicators, "DMG")
---         table.insert(indicators, "Minimum Damage: ".. new_dmg)
---     end
---     if ui.get(refs.edge_yaw) then
---         table.insert(crosshair_indicators, "EDGE")
---         table.insert(indicators, "Edge Yaw")
---     elseif ui.get(refs.freestanding[2]) then
---         table.insert(crosshair_indicators, "FS")
---         table.insert(indicators, "Freestanding")
---     end
---     if ui.get(refs.fake_duck) then
---         table.insert(crosshair_indicators, "FD")
---         table.insert(indicators, "Fake Duck")
---     elseif ui.get(refs.double_tap[2]) then
---         table.insert(crosshair_indicators, "DT")
---         table.insert(indicators, "Double Tap")
---     elseif ui.get(refs.hide_shots[2]) then
---         table.insert(crosshair_indicators, "HS")
---         table.insert(indicators, "Hide Shots")
---     end
--- end
--- local function crosshair_indicator() -- Will do later
--- end
+local function get_indicators() --the rendering will have to be done through a for loop within the draw function to set the Y axis, this SHOULD work, if not I got another method -NKill
+    local crosshair_indicators = {}
+    local indicators = {}
+    local new_dmg = nil
+    if ui.get(refs.min_dmg_ovr[2]) then
+        if ui.get(refs.min_dmg_ovr[3]) == 0 then
+            new_dmg = "A"
+        else
+            new_dmg = ui.get(refs.min_dmg_ovr[3])
+        end
+        table.insert(crosshair_indicators, "DMG")
+        table.insert(indicators, "Minimum Damage: ".. new_dmg)
+    end
+    if ui.get(refs.edge_yaw) then
+        table.insert(crosshair_indicators, "EDGE")
+        table.insert(indicators, "Edge Yaw")
+    elseif ui.get(refs.freestanding[2]) then
+        table.insert(crosshair_indicators, "FS")
+        table.insert(indicators, "Freestanding")
+    end
+    if ui.get(refs.fake_duck) then
+        table.insert(crosshair_indicators, "FD")
+        table.insert(indicators, "Fake Duck")
+    elseif ui.get(refs.double_tap[2]) then
+        table.insert(crosshair_indicators, "DT")
+        table.insert(indicators, "Double Tap")
+    elseif ui.get(refs.hide_shots[2]) then
+        table.insert(crosshair_indicators, "HS")
+        table.insert(indicators, "Hide Shots")
+    end
+    return crosshair_indicators, indicators
+end
+local function crosshair_indicator(check, col) -- this shit is getting complex, I might try another approach
+    if not check then
+        return
+    end
+
+    local col_r, col_g, col_b, col_a = col:get()
+    local text_size = vector(renderer.measure_text("d", e))
+    local liberation_size = vector(renderer.measure_text("d", "liberation"))
+    local crosshair_indicators = get_indicators()
+    local height_decrease = 11
+
+    renderer.text(MID_SCREEN.x - liberation_size.x / 2, MID_SCREEN.y + 10, col_r, col_g, col_b, col_a, "d", 0, "liberation")
+    for n, e in ipairs(crosshair_indicators) do
+        height_decrease = height_decrease + 11 -- Turns out shorthand math(+=) doesn't exist in lua
+        renderer.text(MID_SCREEN.x - text_size.x, MID_SCREEN.y + height_decrease, 255,255,255,255, "d", 0, e)
+    end
+end
+
+-- local watermark_drag = drag.register({SCREEN_SIZE.x - text_size.x - 20, 10}, {text_size.x + 10, text_size.y + 8}, "Test", function(self))
+-- gotta ask mobby about how drag works so I can implement it properly for UI elements, including crosshair indicator at some point
 
 events.paint:set(function()
     watermark(widget_types:get("Watermark"), widget_background_col, widget_txt_col)
-    spectators_list(widget_types:get("Spectators list"), widget_background_col, widget_txt_col)
+    -- spectators_list(widget_types:get("Spectators list"), widget_background_col, widget_txt_col)
+    crosshair_indicator(widget_types:get("Indicators") and indicator_types:get("Under crosshair"), indicator_crosshair_color)
 end)
 
 -- Aspect Ratio + its value that is visible only when switch is on
