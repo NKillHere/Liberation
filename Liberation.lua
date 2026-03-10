@@ -132,7 +132,6 @@ menu:label("Spectators list isn't working atm, will fix")
 
 -- [Visuals]
 
-
 -- Widgets, contains Watermark and Spectator list(for now) in that order
 
 -- Watermark subsection
@@ -147,7 +146,7 @@ local widget_switch = menu:switch("Widgets")
     :visible(function()
         return tabs:get() == "Visuals"
     end)
-local widget_types = menu:selectable("Widget Types", "Watermark", "Spectators list", "Indicators")
+local widget_types = menu:selectable("Widget Types", "Watermark", "Spectators list", "Indicator List")
     :visible(function()
     return tabs:get() == "Visuals" and widget_switch:get()
     end)
@@ -219,7 +218,7 @@ local widget_background_col = menu:color_picker("Watermark Background", 240,110,
 
 local widget_text = menu:label("Widget Text")
     :visible(function()
-        return tabs:get() == "Visuals" and widget_types:get("Watermark" or "Spectator list" or "Indicators")
+        return tabs:get() == "Visuals" and widget_types:get("Watermark" or "Spectator list" or "Indicator List")
     end)
 local widget_txt_col = menu:color_picker("Watermark Text", 240, 160, 180, 250)
     :visible(function()
@@ -268,48 +267,85 @@ local function spectators_list(check, bkg_c, txt_c)
     renderer.text(spectator_x:get() - text_size.x, spectator_y:get() - 20, 255,255,255,255, "d", 0, spectators)
 end
 
---Indicator subsection
-local indicator_types = menu:selectable("Indicator Types", "List", "Under crosshair")
+--Crosshair indicator subsection
+local crosshair_switch = menu:switch("Crosshair indicator")
     :visible(function()
-    return tabs:get() == "Visuals" and widget_types:get("Indicators") and widget_switch:get()
+    return tabs:get() == "Visuals"
     end)
-menu:label("Indicator under crosshair color")
+local indicator_crosshair_color = menu:color_picker("Crosshair indicator color", accent_color:get())
     :visible(function()
-    return tabs:get() == "Visuals" and widget_types:get("Indicators") and indicator_types:get("Under crosshair") and widget_switch:get()
+    return tabs:get() == "Visuals"
     end)
-local indicator_crosshair_color = menu:color_picker("Indicator under crosshair color", accent_color:get())
+local crosshair_main = menu:combo("Main font", "Default", "Bold", "Pixel")
     :visible(function()
-    return tabs:get() == "Visuals" and widget_types:get("Indicators") and indicator_types:get("Under crosshair") and widget_switch:get()
+    return tabs:get() == "Visuals" and crosshair_switch:get()
+    end)
+local crosshair_sub = menu:combo("Sub font", "Default", "Bold", "Pixel")
+    :visible(function()
+    return tabs:get() == "Visuals" and crosshair_switch:get()
+    end)
+local crosshair_case = menu:combo("Sub case", "Uppercase", "Lowercase")
+    :visible(function()
+    return tabs:get() == "Visuals" and crosshair_switch:get()
+    end)
+local min_dmg_ind = menu:combo("Minimum damage number", "None", "Default", "Bold", "Pixel")
+    :visible(function()
+    return tabs:get() == "Visuals"
     end)
 
 local function get_indicators() --the rendering will have to be done through a for loop within the draw function to set the Y axis, this SHOULD work, if not I got another method -NKill
     local crosshair_indicators = {}
     local indicators = {}
-    local new_dmg = nil
+    local new_dmg_full = nil
     if ui.get(refs.min_dmg_ovr[2]) then
         if ui.get(refs.min_dmg_ovr[3]) == 0 then
-            new_dmg = "A"
+            new_dmg_full = "Auto"
         else
-            new_dmg = ui.get(refs.min_dmg_ovr[3])
+            new_dmg_full = ui.get(refs.min_dmg_ovr[3])
         end
-        table.insert(crosshair_indicators, "DMG")
-        table.insert(indicators, "Minimum Damage: ".. new_dmg)
+        if crosshair_case:get() == "Lowercase" then
+            table.insert(crosshair_indicators, "damage")
+        else
+            table.insert(crosshair_indicators, "DMG")
+        end
+        table.insert(indicators, "Minimum Damage: ".. new_dmg_full)
     end
     if ui.get(refs.edge_yaw) then
-        table.insert(crosshair_indicators, "EDGE")
+        if crosshair_case:get() == "Lowercase" then
+            table.insert(crosshair_indicators, "edgeyaw")
+        else
+            table.insert(crosshair_indicators, "EDGE")
+        end
         table.insert(indicators, "Edge Yaw")
     elseif ui.get(refs.freestanding[2]) then
-        table.insert(crosshair_indicators, "FS")
+        if crosshair_case:get() == "Lowercase" then
+            table.insert(crosshair_indicators, "freestand")
+        else
+            table.insert(crosshair_indicators, "FS")
+        end
         table.insert(indicators, "Freestanding")
     end
     if ui.get(refs.fake_duck) then
-        table.insert(crosshair_indicators, "FD")
+        if crosshair_case:get() == "Lowercase" then
+            table.insert(crosshair_indicators, "fakeduck")
+        else
+            table.insert(crosshair_indicators, "FD")
+        end
         table.insert(indicators, "Fake Duck")
     elseif ui.get(refs.double_tap[2]) then
-        table.insert(crosshair_indicators, "DT")
+        if crosshair_case:get() == "Lowercase" then
+            table.insert(crosshair_indicators, "doubletap")
+        else
+            table.insert(crosshair_indicators, "DT")
+        end
         table.insert(indicators, "Double Tap")
+
     elseif ui.get(refs.hide_shots[2]) then
-        table.insert(crosshair_indicators, "HS")
+        if crosshair_case:get() == "Lowercase" then
+            table.insert(crosshair_indicators, "hideshots")
+        else
+            table.insert(crosshair_indicators, "HS")
+        end
         table.insert(indicators, "Hide Shots")
     end
     return crosshair_indicators, indicators
@@ -320,25 +356,79 @@ local function crosshair_indicator(check, col) -- this shit is getting complex, 
     end
 
     local col_r, col_g, col_b, col_a = col:get()
-    local text_size = vector(renderer.measure_text("d", e))
-    local liberation_size = vector(renderer.measure_text("d", "liberation"))
     local crosshair_indicators = get_indicators()
-    local height_decrease = 11
+    local height_decrease = 16
+    local case = ""
+    local main_flag = ""
+    local sub_flag = ""
+    local lib = "liberation"
 
-    renderer.text(MID_SCREEN.x - liberation_size.x / 2, MID_SCREEN.y + 10, col_r, col_g, col_b, col_a, "d", 0, "liberation")
+    local function measure_txt(e)
+        return vector(renderer.measure_text(main_flag, e))
+    end
+    local function scope_check(i)
+        if entity.get_prop(LOCAL_PLAYER, 'm_bIsScoped') ~= 0 then
+            string.gsub(main_flag, "c", "r")
+            string.gsub(sub_flag, "c", "r")
+            return measure_txt(i).x / -1.75
+        else 
+            return 0
+        end
+    end
+
+    if crosshair_main:get() == "Default" then
+        main_flag = "cd"
+        renderer.text(MID_SCREEN.x - scope_check(lib), MID_SCREEN.y + height_decrease, col_r, col_g, col_b, col_a, main_flag, 0, lib)
+    elseif crosshair_main:get() == "Bold" then
+        main_flag = "cdb"
+        renderer.text(MID_SCREEN.x - scope_check(lib), MID_SCREEN.y + height_decrease, col_r, col_g, col_b, col_a, main_flag, 0, lib)
+    else
+        main_flag = "-c"
+        renderer.text(MID_SCREEN.x - scope_check(lib), MID_SCREEN.y + height_decrease, col_r, col_g, col_b, col_a, main_flag, 0, string.upper(lib))
+    end
+    if crosshair_sub:get() == "Default" then
+        sub_flag = "cd"
+    elseif crosshair_sub:get() == "Bold" then
+        sub_flag = "cdb"
+    else
+        sub_flag = "-c"
+    end
+    
     for n, e in ipairs(crosshair_indicators) do
         height_decrease = height_decrease + 11 -- Turns out shorthand math(+=) doesn't exist in lua
-        renderer.text(MID_SCREEN.x - text_size.x, MID_SCREEN.y + height_decrease, 255,255,255,255, "d", 0, e)
+        
+        renderer.text(MID_SCREEN.x - scope_check(e), MID_SCREEN.y + height_decrease, 255,255,255,255, sub_flag, 0, e)
     end
 end
+local function dmg_indicator()
+    if min_dmg_ind:get() == "None" then
+        return
+    end
+    local flag = ""
+    local alpha = 177
+    local dmg = ui.get(refs.min_dmg)
 
+    if min_dmg_ind:get() == "Default" then
+        flag = "cd"
+    elseif min_dmg_ind:get() == "Bold" then
+        flag = "cdb"
+    else
+        flag = "-c"
+    end
+    if ui.get(refs.min_dmg_ovr[2]) then
+        alpha = 255
+        dmg = ui.get(refs.min_dmg_ovr[3])
+    end
+    renderer.text(MID_SCREEN.x + 12, MID_SCREEN.y - 9, 255, 255, 255, alpha, flag, 0, dmg)
+end
 -- local watermark_drag = drag.register({SCREEN_SIZE.x - text_size.x - 20, 10}, {text_size.x + 10, text_size.y + 8}, "Test", function(self))
 -- gotta ask mobby about how drag works so I can implement it properly for UI elements, including crosshair indicator at some point
 
 events.paint:set(function()
     watermark(widget_types:get("Watermark"), widget_background_col, widget_txt_col)
     -- spectators_list(widget_types:get("Spectators list"), widget_background_col, widget_txt_col)
-    crosshair_indicator(widget_types:get("Indicators") and indicator_types:get("Under crosshair"), indicator_crosshair_color)
+    crosshair_indicator(crosshair_switch:get(), indicator_crosshair_color)
+    dmg_indicator()
 end)
 
 -- Aspect Ratio + its value that is visible only when switch is on
