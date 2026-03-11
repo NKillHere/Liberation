@@ -114,7 +114,20 @@ local tabs = menu:combo("Tab", "Main", "Anti-Aim", "Visuals", "Misc")
 
 
 -- [Main]
-
+local entrance = menu:label("Welcome to liberation, ".. LOCAL_PLAYER)
+    :visible(function()
+        return tabs:get() == "Main"
+    end)
+local build = menu:label("Build: Developer") -- Currently hardcoded, genuienly don't think I can do this in any other way lol, I'll have to make a separate branch for each type of releases.
+    :visible(function()
+        return tabs:get() == "Main"
+    end)
+local fluxer_button = menu:button("Official Fluxer", function()
+        panorama.open().SteamOverlayAPI.OpenExternalBrowserURL("https://fluxer.gg/iZez6vyQ")
+    end)
+    :visible(function()
+        return tabs:get() == "Main"
+    end)
 
 menu:label("Accent Color")
     :visible(function()
