@@ -22,6 +22,7 @@ local LOCAL_PLAYER = entity.get_local_player()
 -- This is actually structured, it goes from visual/audio stuff(menu color/hitsound), Aimbot functions, Anti-aim stuffs
 local refs = {
     menu_color = ui.reference("MISC", "Settings", "Menu color"),
+    default_indicators = ui.reference("Visuals", "Player ESP", "Hit marker"),
     default_hitsound = ui.reference("Visuals", "Player ESP", "Hit marker sound"),
     min_dmg = ui.reference("RAGE", "Aimbot", "Minimum damage"),
     min_dmg_ovr = {ui.reference("RAGE", "Aimbot", "Minimum damage override")}, -- [1] is checkbox, bool, [2] is the keybind state, bool and [3] is the value, int
@@ -105,29 +106,46 @@ local fun_killsays = {
     "𝕖𝕧𝕖𝕣𝕪𝕥𝕚𝕞𝕖 𝕚𝕕𝕚𝕠𝕥 𝕔𝕠𝕞𝕡𝕒𝕣𝕖 𝕞𝕖 𝕛𝕦𝕤𝕥 𝕣𝕖𝕞𝕖𝕞𝕓𝕖𝕣 𝕚𝕞 𝕠𝕡𝕡𝕠𝕤𝕚𝕥𝕖 𝕦𝕚𝕕 𝕕𝕠𝕨𝕟 𝕜𝕕 𝕦𝕡 (◣_◢)",
     "HvH Highlights #7000 feat. (insert paste here)"
 }
-local custom_killsays = {}
-filesystem.add_search_path(filesystem.get_game_directory(), "csgo", 0) -- I really have no clue what this does, if it breaks it's on me. -NKill
 
 local menu = lui.group("LUA", "A")
 local side_menu = lui.group("LUA", "B")
-local tabs = menu:combo("Tab", "Main", "Visuals", "Misc")
+local tabs = menu:combo("Tab", "Main", "Anti-Aim", "Visuals", "Misc")
+
+
+-- [Anti-Aim] 
+-- Kind of a shell until I really get into writing the proper anti-aim, got some great ideas for defensive shenanigans and $tatic $upremacy
+
+local edge_yaw_switch = menu:switch("Edge Yaw")
+    :visible(function()
+        return tabs:get() == "Anti-Aim"
+    end)
+local edge_yaw_hk = menu:hotkey("a", true)
+    :visible(function()
+        return tabs:get() == "Anti-Aim"
+    end)
+    :add_callback("setup_command", function(bool) --Technically the most correct, if anyone wants to contribute use this event for hotkeys if :callback doesn't work
+        ui.set(refs.edge_yaw, bool:get())
+    end)
+
+
 -- [Main]
 
 
 menu:label("Accent Color")
-:visible(function()
-    return tabs:get() == "Main"
-end)
+    :visible(function()
+        return tabs:get() == "Main"
+    end)
 local accent_color = menu:color_picker("Accent Color", ui.get(refs.menu_color))
     :visible(function()
         return tabs:get() == "Main"
     end)
-    :add_callback("paint_ui", function(col)
-        ui.set(refs.menu_color, col:get())
+    :callback(function(color)
+        ui.set(refs.menu_color, color:get())
     end)
-menu:label("Spectators list isn't working atm, will fix")
+
+menu:label("Spectators list isn't working atm, will fix") -- This will take a while unfortunately due to somehow the logic not working even after calling for expert help
     :visible(function()
-    return tabs:get() == "Main"
+        return tabs:get() == "Main"
     end)
 
 -- [Visuals]
@@ -146,19 +164,19 @@ local widget_switch = menu:switch("Widgets")
     :visible(function()
         return tabs:get() == "Visuals"
     end)
-local widget_types = menu:selectable("Widget Types", "Watermark", "Spectators list", "Indicator List")
+local widget_types = menu:selectable("Widget Types", "Watermark", "Spectators list", "Keybinds List")
     :visible(function()
-    return tabs:get() == "Visuals" and widget_switch:get()
+        return tabs:get() == "Visuals" and widget_switch:get()
     end)
     
-local watermark_types = menu:selectable("Watermark Addons", "Script Name", "Name", "FPS", "Ping", "Tick Rate", "Time(24h)")
+local watermark_types = menu:selectable("Watermark Addons", "Script name", "Name", "FPS", "Ping", "Tick rate", "Time(24h)")
     :visible(function() 
         return tabs:get() == "Visuals" and widget_types:get("Watermark") and widget_switch:get()
     end)
 
 local watermark_map = function()
     local state = {}
-    if watermark_types:get("Script Name") then
+    if watermark_types:get("Script name") then
         table.insert(state, "liberation")
     end
     if watermark_types:get("Name") then
@@ -176,7 +194,7 @@ local watermark_map = function()
         local watermark_ping = string.format("rtt: %dms", ping)
         table.insert(state, watermark_ping)
     end
-    if watermark_types:get("Tick Rate") then
+    if watermark_types:get("Tick rate") then
         local watermark_tickrate = string.format("rate: %d", math.ceil(1 / globals.tickinterval()))
         table.insert(state, watermark_tickrate)
     end
@@ -189,12 +207,12 @@ local watermark_map = function()
     return #state > 0 and table.concat(state, " | " or "Liberation")
 end
 
-local function watermark(check, bkg_c, txt_c)
+local function watermark(check, background_color, text_color)
     if not check then
         return
     end
-    local bkg_r, bkg_g, bkg_b, bkg_a = bkg_c:get()
-    local txt_r, txt_g, txt_b, txt_a = txt_c:get()
+    local bkg_r, bkg_g, bkg_b, bkg_a = background_color:get()
+    local txt_r, txt_g, txt_b, txt_a = text_color:get()
 
     local watermark_txt = watermark_map()
     if watermark_txt == false then
@@ -207,20 +225,20 @@ local function watermark(check, bkg_c, txt_c)
     renderer.text(SCREEN_SIZE.x - text_size.x - 15, 13, txt_r, txt_g, txt_b, txt_a, "d", 0, watermark_txt)
 end
 
-local widget_background = menu:label("Widget Background")
+local widget_bkg_label = menu:label("Widget Background")
     :visible(function()
         return tabs:get() == "Visuals" and widget_types:get("Watermark")
     end)
-local widget_background_col = menu:color_picker("Watermark Background", 240,110,140,130)
+local widget_background = menu:color_picker("Watermark Background", 240,110,140,130)
     :visible(function()
         return tabs:get() == "Visuals" and widget_types:get("Watermark")
     end)
 
-local widget_text = menu:label("Widget Text")
+local widget_txt_label = menu:label("Widget Text")
     :visible(function()
-        return tabs:get() == "Visuals" and widget_types:get("Watermark" or "Spectator list" or "Indicator List")
+        return tabs:get() == "Visuals" and widget_types:get("Watermark" or "Spectator list" or "Keybinds List")
     end)
-local widget_txt_col = menu:color_picker("Watermark Text", 240, 160, 180, 250)
+local widget_txt = menu:color_picker("Watermark Text", 240, 160, 180, 250)
     :visible(function()
         return tabs:get() == "Visuals" and widget_types:get("Watermark")
     end)
@@ -235,7 +253,7 @@ local widget_txt_col = menu:color_picker("Watermark Text", 240, 160, 180, 250)
 --         return tabs:get() == "Visuals" and widget_types:get("Spectators list")
 --     end)
 
-local function get_spectators()
+local function get_spectators() --Will be redone like the indicators section for efficiency's sake.
     local spectators = {}
     local local_player = entity.get_prop(LOCAL_PLAYER, "m_hObserverTarget")
 
@@ -251,126 +269,73 @@ local function get_spectators()
     return spectators
 end
 
-local function spectators_list(check, bkg_c, txt_c)
+local function spectators_list(check, background_color, text_color)
     if not check then
         return
     end
 
-    local bkg_r, bkg_g, bkg_b, bkg_a = bkg_c:get()
-    local txt_r, txt_g, txt_b, txt_a = txt_c:get()
+    local bkg_r, bkg_g, bkg_b, bkg_a = background_color:get()
+    local txt_r, txt_g, txt_b, txt_a = text_color:get()
     local spectators = get_spectators()
     local spectator_txt = "Spectators"
     local text_size = vector(renderer.measure_text("d", spectator_txt))
+    -- note to self: spectactor_x and y should be the things I need to change in order to implement the drag system, although I'm not 100% sure...
     -- x,y, width, height, r,g,b,a(I am fucking sick of looking on the docs constantly)
     renderer.rectangle(spectator_x:get() - text_size.x - 40, spectator_y:get(), text_size.x + 80, text_size.y + 8, bkg_r, bkg_g, bkg_b, bkg_a)
     renderer.text(spectator_x:get() - text_size.x - 0, spectator_y:get() + 3, txt_r, txt_g, txt_b, txt_a, "d", 0, spectator_txt)
-    renderer.text(spectator_x:get() - text_size.x, spectator_y:get() - 20, 255,255,255,255, "d", 0, spectators)
+    renderer.text(spectator_x:get() - text_size.x, spectator_y:get() - 20, 255, 255, 255, 255, "d", 0, spectators)
 end
 
 --Crosshair indicator subsection
 local crosshair_switch = menu:switch("Crosshair indicator")
     :visible(function()
-    return tabs:get() == "Visuals"
+        return tabs:get() == "Visuals"
     end)
 local indicator_crosshair_color = menu:color_picker("Crosshair indicator color", accent_color:get())
     :visible(function()
-    return tabs:get() == "Visuals"
+        return tabs:get() == "Visuals"
     end)
 local crosshair_main = menu:combo("Main font", "Default", "Bold", "Pixel")
     :visible(function()
-    return tabs:get() == "Visuals" and crosshair_switch:get()
+        return tabs:get() == "Visuals" and crosshair_switch:get()
     end)
 local crosshair_sub = menu:combo("Sub font", "Default", "Bold", "Pixel")
     :visible(function()
-    return tabs:get() == "Visuals" and crosshair_switch:get()
+        return tabs:get() == "Visuals" and crosshair_switch:get()
     end)
 local crosshair_case = menu:combo("Sub case", "Uppercase", "Lowercase")
     :visible(function()
-    return tabs:get() == "Visuals" and crosshair_switch:get()
+        return tabs:get() == "Visuals" and crosshair_switch:get()
     end)
+
 local min_dmg_ind = menu:combo("Minimum damage number", "None", "Default", "Bold", "Pixel")
     :visible(function()
-    return tabs:get() == "Visuals"
+        return tabs:get() == "Visuals"
     end)
 
-local function get_indicators() --the rendering will have to be done through a for loop within the draw function to set the Y axis, this SHOULD work, if not I got another method -NKill
-    local crosshair_indicators = {}
-    local indicators = {}
-    local new_dmg_full = nil
-    if ui.get(refs.min_dmg_ovr[2]) then
-        if ui.get(refs.min_dmg_ovr[3]) == 0 then
-            new_dmg_full = "Auto"
-        else
-            new_dmg_full = ui.get(refs.min_dmg_ovr[3])
-        end
-        if crosshair_case:get() == "Lowercase" then
-            table.insert(crosshair_indicators, "damage")
-        else
-            table.insert(crosshair_indicators, "DMG")
-        end
-        table.insert(indicators, "Minimum Damage: ".. new_dmg_full)
-    end
-    if ui.get(refs.edge_yaw) then
-        if crosshair_case:get() == "Lowercase" then
-            table.insert(crosshair_indicators, "edgeyaw")
-        else
-            table.insert(crosshair_indicators, "EDGE")
-        end
-        table.insert(indicators, "Edge Yaw")
-    elseif ui.get(refs.freestanding[2]) then
-        if crosshair_case:get() == "Lowercase" then
-            table.insert(crosshair_indicators, "freestand")
-        else
-            table.insert(crosshair_indicators, "FS")
-        end
-        table.insert(indicators, "Freestanding")
-    end
-    if ui.get(refs.fake_duck) then
-        if crosshair_case:get() == "Lowercase" then
-            table.insert(crosshair_indicators, "fakeduck")
-        else
-            table.insert(crosshair_indicators, "FD")
-        end
-        table.insert(indicators, "Fake Duck")
-    elseif ui.get(refs.double_tap[2]) then
-        if crosshair_case:get() == "Lowercase" then
-            table.insert(crosshair_indicators, "doubletap")
-        else
-            table.insert(crosshair_indicators, "DT")
-        end
-        table.insert(indicators, "Double Tap")
-
-    elseif ui.get(refs.hide_shots[2]) then
-        if crosshair_case:get() == "Lowercase" then
-            table.insert(crosshair_indicators, "hideshots")
-        else
-            table.insert(crosshair_indicators, "HS")
-        end
-        table.insert(indicators, "Hide Shots")
-    end
-    return crosshair_indicators, indicators
-end
-local function crosshair_indicator(check, col) -- this shit is getting complex, I might try another approach
+local function draw_indicators(check, color) 
     if not check then
         return
     end
 
-    local col_r, col_g, col_b, col_a = col:get()
-    local crosshair_indicators = get_indicators()
+    local col_r, col_g, col_b, col_a = color:get()
+    local crosshair_indicators = {}
     local height_decrease = 16
     local case = ""
     local main_flag = ""
     local sub_flag = ""
     local lib = "liberation"
+    local indicators = {}
+    local new_dmg_full = nil
 
-    local function measure_txt(e)
-        return vector(renderer.measure_text(main_flag, e))
+    local function measure_txt(txt)
+        return vector(renderer.measure_text(main_flag, txt))
     end
-    local function scope_check(i)
-        if entity.get_prop(LOCAL_PLAYER, 'm_bIsScoped') ~= 0 then
+    local function scope_check(txt)
+        if entity.get_prop(LOCAL_PLAYER, "m_bIsScoped") ~= 0 then
             string.gsub(main_flag, "c", "r")
             string.gsub(sub_flag, "c", "r")
-            return measure_txt(i).x / -1.75
+            return measure_txt(txt).x / -1.75
         else 
             return 0
         end
@@ -391,17 +356,71 @@ local function crosshair_indicator(check, col) -- this shit is getting complex, 
     elseif crosshair_sub:get() == "Bold" then
         sub_flag = "cdb"
     else
-        sub_flag = "-c"
+        sub_flag = "-c" -- looks like ass with lowercase lmao
     end
-    
+
+    if ui.get(refs.fake_duck) then
+        if crosshair_case:get() == "Lowercase" then
+            table.insert(crosshair_indicators, "fakeduck")
+        else
+            table.insert(crosshair_indicators, "FD")
+        end
+        table.insert(indicators, "Fake Duck")
+    elseif ui.get(refs.double_tap[2]) then
+        if crosshair_case:get() == "Lowercase" then
+            table.insert(crosshair_indicators, "doubletap")
+        else
+            table.insert(crosshair_indicators, "DT")
+        end
+        table.insert(indicators, "Double Tap")
+    elseif ui.get(refs.hide_shots[2]) then
+        if crosshair_case:get() == "Lowercase" then
+            table.insert(crosshair_indicators, "hideshots")
+        else
+            table.insert(crosshair_indicators, "HS")
+        end
+        table.insert(indicators, "Hide Shots")
+    end
+    if ui.get(refs.edge_yaw) then
+        if crosshair_case:get() == "Lowercase" then
+            table.insert(crosshair_indicators, "edgeyaw")
+        else
+            table.insert(crosshair_indicators, "EDGE")
+        end
+        if ui.get(refs.default_indicators) then
+        renderer.indicator(255, 255, 255, 200, "EDGE")
+        end
+        table.insert(indicators, "Edge Yaw")
+    elseif ui.get(refs.freestanding[2]) then
+        if crosshair_case:get() == "Lowercase" then
+            table.insert(crosshair_indicators, "freestand")
+        else
+            table.insert(crosshair_indicators, "FS")
+        end
+        table.insert(indicators, "Freestanding")
+    end
+    if ui.get(refs.min_dmg_ovr[2]) then
+        if ui.get(refs.min_dmg_ovr[3]) == 0 then
+            new_dmg_full = "Auto"
+        else
+            new_dmg_full = ui.get(refs.min_dmg_ovr[3])
+        end
+        if crosshair_case:get() == "Lowercase" then
+            table.insert(crosshair_indicators, 1, "damage")
+        else
+            table.insert(crosshair_indicators, 1, "DMG")
+        end
+        table.insert(indicators, "Minimum Damage: ".. new_dmg_full)
+    end
     for n, e in ipairs(crosshair_indicators) do
         height_decrease = height_decrease + 11 -- Turns out shorthand math(+=) doesn't exist in lua
         
-        renderer.text(MID_SCREEN.x - scope_check(e), MID_SCREEN.y + height_decrease, 255,255,255,255, sub_flag, 0, e)
+        renderer.text(MID_SCREEN.x - scope_check(e), MID_SCREEN.y + height_decrease, 255, 255, 255, 255, sub_flag, 0, e)
     end
 end
-local function dmg_indicator()
-    if min_dmg_ind:get() == "None" then
+
+local function dmg_indicator(check)
+    if not check then
         return
     end
     local flag = ""
@@ -425,10 +444,11 @@ end
 -- gotta ask mobby about how drag works so I can implement it properly for UI elements, including crosshair indicator at some point
 
 events.paint:set(function()
-    watermark(widget_types:get("Watermark"), widget_background_col, widget_txt_col)
-    -- spectators_list(widget_types:get("Spectators list"), widget_background_col, widget_txt_col)
-    crosshair_indicator(crosshair_switch:get(), indicator_crosshair_color)
-    dmg_indicator()
+    watermark(widget_types:get("Watermark"), widget_background, widget_txt)
+    -- spectators_list(widget_types:get("Spectators list"), widget_background, widget_txt)
+    draw_indicators(crosshair_switch:get() or key, indicator_crosshair_color)
+    dmg_indicator(min_dmg_ind:get() ~= "None")
+    -- edge_yaw_toggle(edge_yaw_switch:get(), edge_yaw_hk:get())
 end)
 
 -- Aspect Ratio + its value that is visible only when switch is on
@@ -437,20 +457,20 @@ local aspect_ratio = menu:switch("Aspect Ratio")
     :visible(function()
         return tabs:get() == "Visuals"
     end)
-    :callback(function(obj)
-        cvar.r_aspectratio:set_float(obj:get() and 0)
+    :callback(function(value)
+        cvar.r_aspectratio:set_float(value:get() and 0)
     end)
-aspect_ratios = {[177] = '16:9',[161] = '16:10',[150] = '3:2',[133] = '4:3',[125] = '5:4'}
+aspect_ratios = {[177] = '16:9', [161] = '16:10', [150] = '3:2', [133] = '4:3', [125] = '5:4'}
 
 local aspect_ratio_value = menu:slider("Aspect Ratio Value", 0, 250, 150, true, false, 1, aspect_ratios)
     :visible(function()
         return aspect_ratio:get() and tabs:get() == "Visuals"
     end)
-    :callback(function(obj)
+    :callback(function(value)
         if not entity.is_alive(LOCAL_PLAYER) then
             return
         end
-        client.set_cvar("r_aspectratio", obj:get() / 100)
+        client.set_cvar("r_aspectratio", value:get() / 100)
     end)
 
 -- Viewmodel changer switch which reveals x, y, z and fov(in that order)
@@ -473,8 +493,8 @@ local viewmodel_changer = menu:switch("Viewmodel Changer")
     :visible(function()
         return tabs:get() == "Visuals"
     end)
-    :callback(function(obj)
-        if not obj:get() then 
+    :callback(function(bool)
+        if not bool:get() then 
             client.set_cvar("viewmodel_offset_x", pre_change_x)
             client.set_cvar("viewmodel_offset_y", pre_change_y)
             client.set_cvar("viewmodel_offset_z", pre_change_z)
@@ -492,27 +512,27 @@ local viewmodel_x = menu:slider("Viewmodel X", -500, 500, pre_change_x, true, ni
         return viewmodel_changer:get() and tabs:get() == "Visuals"
     end)
 
-    :callback(function(test)
-        viewmodel_cache.x = test:get() / 100
-        client.set_cvar("viewmodel_offset_x", test:get() / 100)
+    :callback(function(value)
+        viewmodel_cache.x = value:get() / 100
+        client.set_cvar("viewmodel_offset_x", value:get() / 100)
     end)
 
 local viewmodel_y = menu:slider("Viewmodel Y", -500, 500, pre_change_y, true, nil, 0.01)
     :visible(function()
         return viewmodel_changer:get() and tabs:get() == "Visuals"
     end)
-    :callback(function(obj)
-        viewmodel_cache.y = obj:get() / 100
-        client.set_cvar("viewmodel_offset_y", obj:get() / 100) 
+    :callback(function(value)
+        viewmodel_cache.y = value:get() / 100
+        client.set_cvar("viewmodel_offset_y", value:get() / 100) 
     end)
 
 local viewmodel_z = menu:slider("Viewmodel Z", -500, 500, pre_change_z, true, nil, 0.01)
     :visible(function()
         return viewmodel_changer:get() and tabs:get() == "Visuals"
     end)
-    :callback(function(obj)
-        viewmodel_cache.z = obj:get() / 100
-        client.set_cvar("viewmodel_offset_z", obj:get() / 100)
+    :callback(function(value)
+        viewmodel_cache.z = value:get() / 100
+        client.set_cvar("viewmodel_offset_z", value:get() / 100)
     end)
 
 local viewmodel_fov = menu:slider("Viewmodel FOV", 50, 120, pre_change_fov, true)
@@ -527,7 +547,7 @@ local viewmodel_fov = menu:slider("Viewmodel FOV", 50, 120, pre_change_fov, true
 
 -- [Misc]
 
--- Hitsound on hit and on kill Not working due to playing sounds being a mess -NKill
+-- Hitsound on hit and on kill currently not working due to playing sounds being a mess -NKill
 
 -- if not filesystem.is_directory(DIRECTORY.."liberation/sounds", "csgo")
 --     then 
@@ -614,14 +634,14 @@ local logs_switch = menu:switch("Logs")
     :visible(function()
         return tabs:get() == "Misc"
     end)
-    :add_callback("aim_fire", function(obj, e) -- obj is the switch state
+    :add_callback("aim_fire", function(bool, e) -- bool is the switch state, e is the entity
         logs.bt = math.floor(globals.tickcount() - e.tick)
         logs.intended_hitgroup = NAMED_HITGROUPS[e.hitgroup + 1]
         logs.intended_dmg = e.damage
         logs.tp = e.teleported
         return logs.bt, logs.intended_hitgroup, logs.intended_dmg, logs.tp
     end)
-    :add_callback("aim_hit", function(obj, e)
+    :add_callback("aim_hit", function(bool, e)
         entity_hp = entity.get_prop(e.target, 'm_iHealth')
 
         local hitgroup_name = NAMED_HITGROUPS[e.hitgroup + 1] or '?'
@@ -645,7 +665,7 @@ local logs_switch = menu:switch("Logs")
         mismatch_check, entity.get_player_name(e.target), hitgroup_txt, e.damage, entity_hp, intended_txt, logs.tp, e.hit_chance, logs.bt,
         math.floor(totime(logs.bt) * 1000)))
     end)
-    :add_callback("aim_miss", function(obj, e)
+    :add_callback("aim_miss", function(bool, e)
         local hitgroup_name = NAMED_HITGROUPS[e.hitgroup + 1] or '?'
         local missreason = e.reason
             if missreason == "?" then
@@ -675,8 +695,8 @@ local function custom_killsay_import()
         return
     end
  
-    for i = 1, #data do
-        if type(data[i]) ~= "string" then
+    for index = 1, #data do
+        if type(data[index]) ~= "string" then
             utils.print(PREFIX, "Invalid format, all killsays must be strings.")
             return
         end
@@ -689,11 +709,11 @@ end
 local killsay_switch = menu:switch("Killsay", false)
     :visible(function()
        return tabs:get() == "Misc"
-end)
+    end)
 local killsay_types = menu:selectable("Killsay Types", {"Promotional", "Trashtalk", "Fun", "Custom"})
     :visible(function()
         return killsay_switch:get() and tabs:get() == "Misc"
-end)
+    end)
 local custom_killsay = menu:button("Import Custom Killsay List", function()
         custom_killsays = custom_killsay_import()
     end)
@@ -702,8 +722,8 @@ local custom_killsay = menu:button("Import Custom Killsay List", function()
     end)
 
 local function table_contains(tbl, val)
-    for i = 1, #tbl do
-        if tbl[i] == val then
+    for index = 1, #tbl do
+        if tbl[index] == val then
             return true
         end
     end
@@ -766,9 +786,9 @@ local function create_clantag_animation()
     local text, prefix = "Liberation", "✰ "
     local cursor = {"_", " ", "_", " "}
 
-    for i = 0, #text do
-        if i > 0 then
-            table.insert(anim, prefix .. text:sub(1, i) .. "_")
+    for index = 0, #text do
+        if index > 0 then
+            table.insert(anim, prefix .. text:sub(1, index) .. "_")
         else
             table.insert(anim, prefix .. "_")
         end
@@ -780,8 +800,8 @@ local function create_clantag_animation()
     table.insert(anim, prefix .. text .. " ")
     table.insert(anim, prefix .. text .. "_")
 
-    for i = #text, 1, -1 do
-        table.insert(anim, prefix .. text:sub(1, i - 1) .. "_")
+    for index = #text, 1, -1 do
+        table.insert(anim, prefix .. text:sub(1, index - 1) .. "_")
     end
 
     table.insert(anim, prefix)
@@ -793,8 +813,8 @@ local clantag = menu:switch("Clantag", false)
     :visible(function()
         return tabs:get() == "Misc"
     end)
-    :callback(function(e)
-        if e:get() == false then
+    :callback(function(bool)
+        if bool:get() == false then
             client.set_clan_tag("")
         end
     end)
@@ -815,6 +835,7 @@ local clantag = menu:switch("Clantag", false)
 
 
 events.shutdown:set(function()
+    ui.set(refs.edge_yaw, false)
     client.set_cvar("r_aspectratio", 0)
     client.set_cvar("viewmodel_offset_x", 1)
     client.set_cvar("viewmodel_offset_y", 1)
