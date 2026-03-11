@@ -176,8 +176,8 @@ local left_override = menu:hotkey("Yaw left override")
         if bool:get() == false then
             ui.set(refs.freestanding[2], fs_cache)
             edge_yaw_hk:set(edge_yaw_cache)
-            ui.set(refs.yaw[1], yaw_numcache)
-            ui.set(refs.yaw[2], yaw_cache)
+            ui.set(refs.yaw[1], yaw_cache)
+            ui.set(refs.yaw[2], yaw_numcache)
         if bool:get() == true then
             ui.set(refs.freestanding[2], false)
             edge_yaw_hk:set(false)
@@ -193,8 +193,8 @@ local right_override = menu:hotkey("Yaw right override")
         if bool:get() == false then
             ui.set(refs.freestanding[2], fs_cache)
             edge_yaw_hk:set(edge_yaw_cache)
-            ui.set(refs.yaw[1], yaw_numcache)
-            ui.set(refs.yaw[2], yaw_cache)
+            ui.set(refs.yaw[1], yaw_cache)
+            ui.set(refs.yaw[2], yaw_numcache)
         if bool:get() == true then
             ui.set(refs.freestanding[2], false)
             edge_yaw_hk:set(false)
@@ -210,8 +210,8 @@ local front_override = menu:hotkey("Yaw front override")
         if bool:get() == false then
             ui.set(refs.freestanding[2], fs_cache) 
             edge_yaw_hk:set(edge_yaw_cache)
-            ui.set(refs.yaw[1], yaw_numcache)
-            ui.set(refs.yaw[2], yaw_cache)
+            ui.set(refs.yaw[1], yaw_cache)
+            ui.set(refs.yaw[2], yaw_numcache)
         if bool:get() == true then
             ui.set(refs.freestanding[2], false)
             edge_yaw_hk:set(false)
@@ -227,8 +227,8 @@ local back_override = menu:hotkey("Yaw back override")
         if bool:get() == false then
             ui.set(refs.freestanding[2], fs_cache)
             edge_yaw_hk:set(edge_yaw_cache)
-            ui.set(refs.yaw[1], yaw_numcache)
-            ui.set(refs.yaw[2], yaw_cache)
+            ui.set(refs.yaw[1], yaw_cache)
+            ui.set(refs.yaw[2], yaw_numcache)
         if bool:get() == true then
             ui.set(refs.freestanding[2], false)
             edge_yaw_hk:set(false)
@@ -353,9 +353,10 @@ local widget_txt = menu:color_picker("Watermark Text", 240, 160, 180, 250)
 local function get_spectators() --Will be redone like the indicators section for efficiency's sake.
     local spectators = {}
     local local_player = entity.get_prop(LOCAL_PLAYER, "m_hObserverTarget")
+    local players = globals.maxplayers()
 
     ent = 1
-    for ent = 1, 65 do
+    for ent = 1, players+1 do
         local target_player = entity.get_prop(ent, "m_hObserverTarget")
         
         if target_player == local_player then
