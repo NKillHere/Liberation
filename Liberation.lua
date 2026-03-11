@@ -148,20 +148,26 @@ local edge_yaw_hk = menu:hotkey("a", true)
     :add_callback("setup_command", function(bool) --Technically the most correct, if anyone wants to contribute use this event for hotkeys if :callback doesn't work
         ui.set(refs.edge_yaw, bool:get())
     end)
-
 local override_warning = menu:label("Currently haven't tested, may break") 
     :visible(function()
         return tabs:get() == "Anti-Aim"
     end)
+
+local yaw_cache, yaw_numcache, fs_cache, edge_yaw_cache = ui.get(refs.yaw[1]), ui.get(refs.yaw[2]), ui.get(refs.freestanding[2]), edge_yaw_hk:get()
+
 local left_override = menu:hotkey("Yaw left override")
     :visible(function()
         return tabs:get() == "Anti-Aim"
     end)
     :callback(function(bool)
-        if bool:get() == false then 
+        if bool:get() == false then
+            ui.set(refs.freestanding[2], fs_cache)
+            edge_yaw_hk:set(edge_yaw_cache)
             ui.set(refs.yaw[1], yaw_numcache)
             ui.set(refs.yaw[2], yaw_cache)
         if bool:get() == true then
+            ui.set(refs.freestanding[2], false)
+            edge_yaw_hk:set(false)
             ui.set(refs.yaw[1], "180")
             ui.set(refs.yaw[2], -90)
         end
@@ -171,10 +177,14 @@ local right_override = menu:hotkey("Yaw right override")
         return tabs:get() == "Anti-Aim"
     end)
     :callback(function(bool)
-        if bool:get() == false then 
+        if bool:get() == false then
+            ui.set(refs.freestanding[2], fs_cache)
+            edge_yaw_hk:set(edge_yaw_cache)
             ui.set(refs.yaw[1], yaw_numcache)
             ui.set(refs.yaw[2], yaw_cache)
         if bool:get() == true then
+            ui.set(refs.freestanding[2], false)
+            edge_yaw_hk:set(false)
             ui.set(refs.yaw[1], "180")
             ui.set(refs.yaw[2], 90)
         end
@@ -184,10 +194,14 @@ local front_override = menu:hotkey("Yaw front override")
         return tabs:get() == "Anti-Aim"
     end)
     :callback(function(bool)
-        if bool:get() == false then 
+        if bool:get() == false then
+            ui.set(refs.freestanding[2], fs_cache) 
+            edge_yaw_hk:set(edge_yaw_cache)
             ui.set(refs.yaw[1], yaw_numcache)
             ui.set(refs.yaw[2], yaw_cache)
         if bool:get() == true then
+            ui.set(refs.freestanding[2], false)
+            edge_yaw_hk:set(false)
             ui.set(refs.yaw[1], "180")
             ui.set(refs.yaw[2], 180)
         end
@@ -197,16 +211,19 @@ local back_override = menu:hotkey("Yaw back override")
         return tabs:get() == "Anti-Aim"
     end)
     :callback(function(bool)
-        if bool:get() == false then 
+        if bool:get() == false then
+            ui.set(refs.freestanding[2], fs_cache)
+            edge_yaw_hk:set(edge_yaw_cache)
             ui.set(refs.yaw[1], yaw_numcache)
             ui.set(refs.yaw[2], yaw_cache)
         if bool:get() == true then
+            ui.set(refs.freestanding[2], false)
+            edge_yaw_hk:set(false)
             ui.set(refs.yaw[1], "180")
             ui.set(refs.yaw[2], 0)
         end
     end)
 
-local yaw_cache, yaw_numcache = ui.get(refs.yaw[1]), ui.get(refs.yaw[2])
 events.setup_command:set(function() --bandaid fix and is inefficient, though it should work for now until further integration.
     if not left_override:get() or not right_override:get() or not front_override:get() or not back_override:get() then
         local yaw_cache, yaw_numcache, fs_cache, edge_yaw_cache = ui.get(refs.yaw[1]), ui.get(refs.yaw[2]), ui.get(refs.freestanding[2]), edge_yaw_hk:get() --@note: try ui.get with multiple arguements
