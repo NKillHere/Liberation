@@ -28,6 +28,7 @@ local refs = {
     min_dmg_ovr = {ui.reference("RAGE", "Aimbot", "Minimum damage override")}, -- [1] is checkbox, bool, [2] is the keybind state, bool and [3] is the value, int
     double_tap = {ui.reference("RAGE", "Aimbot", "Double tap")},
     hide_shots = {ui.reference("AA", "Other", "On shot anti-aim")},
+    yaw = {ui.reference("AA", "Anti-aimbot angles", "Yaw")},
     freestanding = {ui.reference("AA", "Anti-aimbot angles", "Freestanding")},
     edge_yaw = ui.reference("AA", "Anti-aimbot angles", "Edge yaw"),
     fake_duck = ui.reference("RAGE", "Other", "Duck peek assist")
@@ -112,22 +113,6 @@ local side_menu = lui.group("LUA", "B")
 local tabs = menu:combo("Tab", "Main", "Anti-Aim", "Visuals", "Misc")
 
 
--- [Anti-Aim] 
--- Kind of a shell until I really get into writing the proper anti-aim, got some great ideas for defensive shenanigans and $tatic $upremacy
-
-local edge_yaw_switch = menu:switch("Edge Yaw")
-    :visible(function()
-        return tabs:get() == "Anti-Aim"
-    end)
-local edge_yaw_hk = menu:hotkey("a", true)
-    :visible(function()
-        return tabs:get() == "Anti-Aim"
-    end)
-    :add_callback("setup_command", function(bool) --Technically the most correct, if anyone wants to contribute use this event for hotkeys if :callback doesn't work
-        ui.set(refs.edge_yaw, bool:get())
-    end)
-
-
 -- [Main]
 
 
@@ -143,10 +128,92 @@ local accent_color = menu:color_picker("Accent Color", ui.get(refs.menu_color))
         ui.set(refs.menu_color, color:get())
     end)
 
-menu:label("Spectators list isn't working atm, will fix") -- This will take a while unfortunately due to somehow the logic not working even after calling for expert help
+menu:label("Spectators list isn't working atm, will fix") -- This will take a while unfortunately due to somehow the logic not working even after calling for expert help + me needing someone to test it with since it doesn't work with bots
     :visible(function()
         return tabs:get() == "Main"
     end)
+
+
+-- [Anti-Aim] 
+-- Kind of a shell until I really get into writing the proper anti-aim, got some great ideas for defensive shenanigans and $tatic $upremacy
+
+local edge_yaw_switch = menu:switch("Edge Yaw")
+    :visible(function()
+        return tabs:get() == "Anti-Aim"
+    end)
+local edge_yaw_hk = menu:hotkey("a", true)
+    :visible(function()
+        return tabs:get() == "Anti-Aim"
+    end)
+    :add_callback("setup_command", function(bool) --Technically the most correct, if anyone wants to contribute use this event for hotkeys if :callback doesn't work
+        ui.set(refs.edge_yaw, bool:get())
+    end)
+
+local override_warning = menu:label("Currently haven't tested, may break") 
+    :visible(function()
+        return tabs:get() == "Anti-Aim"
+    end)
+local left_override = menu:hotkey("Yaw left override")
+    :visible(function()
+        return tabs:get() == "Anti-Aim"
+    end)
+    :callback(function(bool)
+        if bool:get() == false then 
+            ui.set(refs.yaw[1], yaw_numcache)
+            ui.set(refs.yaw[2], yaw_cache)
+        if bool:get() == true then
+            ui.set(refs.yaw[1], "180")
+            ui.set(refs.yaw[2], -90)
+        end
+    end)
+local right_override = menu:hotkey("Yaw right override")
+    :visible(function()
+        return tabs:get() == "Anti-Aim"
+    end)
+    :callback(function(bool)
+        if bool:get() == false then 
+            ui.set(refs.yaw[1], yaw_numcache)
+            ui.set(refs.yaw[2], yaw_cache)
+        if bool:get() == true then
+            ui.set(refs.yaw[1], "180")
+            ui.set(refs.yaw[2], 90)
+        end
+    end)
+local front_override = menu:hotkey("Yaw front override")
+    :visible(function()
+        return tabs:get() == "Anti-Aim"
+    end)
+    :callback(function(bool)
+        if bool:get() == false then 
+            ui.set(refs.yaw[1], yaw_numcache)
+            ui.set(refs.yaw[2], yaw_cache)
+        if bool:get() == true then
+            ui.set(refs.yaw[1], "180")
+            ui.set(refs.yaw[2], 180)
+        end
+    end)
+local back_override = menu:hotkey("Yaw back override")
+    :visible(function()
+        return tabs:get() == "Anti-Aim"
+    end)
+    :callback(function(bool)
+        if bool:get() == false then 
+            ui.set(refs.yaw[1], yaw_numcache)
+            ui.set(refs.yaw[2], yaw_cache)
+        if bool:get() == true then
+            ui.set(refs.yaw[1], "180")
+            ui.set(refs.yaw[2], 0)
+        end
+    end)
+
+local yaw_cache, yaw_numcache = ui.get(refs.yaw[1]), ui.get(refs.yaw[2])
+events.setup_command:set(function() --bandaid fix and is inefficient, though it should work for now until further integration.
+    if not left_override:get() or not right_override:get() or not front_override:get() or not back_override:get() then
+        local yaw_cache, yaw_numcache, fs_cache, edge_yaw_cache = ui.get(refs.yaw[1]), ui.get(refs.yaw[2]), ui.get(refs.freestanding[2]), edge_yaw_hk:get() --@note: try ui.get with multiple arguements
+    else
+        return
+    end
+end)
 
 -- [Visuals]
 
