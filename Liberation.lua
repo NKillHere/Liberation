@@ -3,12 +3,12 @@
 
 -- |Libraries|
 
-
 local lapi = require "gamesense/lapi" or error("LAPI is required for this lua, download from https://github.com/Tony1337-bit/library")
 local clipboard = require("gamesense/clipboard")
 local vector = require("vector")
 
 -- |Constants|
+-- Keep the Killsays always on the lowest part due to size
 
 local NAMED_HITGROUPS = {"generic", "head", "chest", "stomach", "left arm", "right arm", "left leg","right leg", "neck", "?", "gear"}
 local PREFIX = "Liberation"
@@ -17,26 +17,7 @@ local USER_NAME = utils.name()
 local SCREEN_SIZE = vector(client.screen_size())
 local MID_SCREEN = vector(SCREEN_SIZE.x /2, SCREEN_SIZE.y / 2)
 local LOCAL_PLAYER = entity.get_local_player()
-
--- | References |
--- This is actually structured, it goes from visual/audio stuff(menu color/hitsound), Aimbot functions, Anti-aim stuffs
-local refs = {
-    menu_color = ui.reference("MISC", "Settings", "Menu color"),
-    default_indicators = ui.reference("Visuals", "Player ESP", "Hit marker"),
-    default_hitsound = ui.reference("Visuals", "Player ESP", "Hit marker sound"),
-    min_dmg = ui.reference("RAGE", "Aimbot", "Minimum damage"),
-    min_dmg_ovr = {ui.reference("RAGE", "Aimbot", "Minimum damage override")}, -- [1] is checkbox, bool, [2] is the keybind state, bool and [3] is the value, int
-    double_tap = {ui.reference("RAGE", "Aimbot", "Double tap")},
-    hide_shots = {ui.reference("AA", "Other", "On shot anti-aim")},
-    yaw = {ui.reference("AA", "Anti-aimbot angles", "Yaw")},
-    freestanding = {ui.reference("AA", "Anti-aimbot angles", "Freestanding")},
-    edge_yaw = ui.reference("AA", "Anti-aimbot angles", "Edge yaw"),
-    fake_duck = ui.reference("RAGE", "Other", "Duck peek assist")
-}
-
--- |Variables|
-
-local promo_killsays = {
+local PROMO_PHRASES = {
     "Flying free and hitting heads with Liberation | github.com/NKillHere/Liberation",
     "Stacking bodies high as a skyscraper with Liberation | github.com/NKillHere/Liberation",
     "Mad? No worries script is free | github.com/NKillHere/Liberation",
@@ -49,7 +30,7 @@ local promo_killsays = {
     "I push like Rambo but remain unharmed | github.com/NKillHere/Liberation",
     "Dodging bullets like Neo with Liberation | github.com/NKillHere/Liberation"
 }
-local trash_killsays = {
+local TRASH_PHRASES = {
     "When you see me on your esp you shit yourself",
     "bot_difficulty 5",
     "bot_kick and you're still here",
@@ -74,7 +55,7 @@ local trash_killsays = {
     "Gloat that you have a pasted lua, but it will never save you",
     "Let's be honest here, you're fucking stupid. I have no idea how you are breathing."
 }
-local fun_killsays = {
+local FUN_PHRASES = {
     "Here you go Uncle Dave, happy fucking birthday!",
     "Here's some lead for you to recycle!", "Here's your tax relief!",
     "I AM the law! heheheh",
@@ -108,6 +89,41 @@ local fun_killsays = {
     "HvH Highlights #7000 feat. (insert paste here)"
 }
 
+
+-- | References |
+-- This is actually structured, it goes from visual/audio stuff(menu color/hitsound), Aimbot functions, Anti-aim stuffs
+local refs = {
+    menu_color = ui.reference("MISC", "Settings", "Menu color"),
+    default_indicators = ui.reference("Visuals", "Player ESP", "Hit marker"),
+    default_hitsound = ui.reference("Visuals", "Player ESP", "Hit marker sound"),
+    min_dmg = ui.reference("RAGE", "Aimbot", "Minimum damage"),
+    min_dmg_ovr = {ui.reference("RAGE", "Aimbot", "Minimum damage override")}, -- [1] is checkbox, bool, [2] is the keybind state, bool and [3] is the value, int
+    double_tap = {ui.reference("RAGE", "Aimbot", "Double tap")},
+    hide_shots = {ui.reference("AA", "Other", "On shot anti-aim")},
+    yaw = {ui.reference("AA", "Anti-aimbot angles", "Yaw")},
+    freestanding = {ui.reference("AA", "Anti-aimbot angles", "Freestanding")},
+    edge_yaw = ui.reference("AA", "Anti-aimbot angles", "Edge yaw"),
+    fake_duck = ui.reference("RAGE", "Other", "Duck peek assist")
+}
+
+-- |Variables|
+
+-- [Visuals]
+-- Viewmodel Changer
+-- @note: QoL to reset to default if user wants to, tho if he reloads the lua it'll save over, tough shit!
+preload_viewmodel_x_cache = cvar.viewmodel_offset_x:get_float()
+preload_viewmodel_y_cache = cvar.viewmodel_offset_y:get_float()
+preload_viewmodel_z_cache = cvar.viewmodel_offset_z:get_float()
+preload_viewmodel_fov_cache = cvar.viewmodel_fov:get_float()
+
+local viewmodel_cache = {
+    x = 0,
+    y = 0,
+    z = 0,
+    fov = 0
+}
+
+-- |Menu|
 local menu = lui.group("LUA", "A")
 local side_menu = lui.group("LUA", "B")
 local tabs = menu:combo("Tab", "Main", "Anti-Aim", "Visuals", "Misc")
@@ -572,20 +588,6 @@ local aspect_ratio_value = menu:slider("Aspect Ratio Value", 0, 250, 150, true, 
     end)
 
 -- Viewmodel changer switch which reveals x, y, z and fov(in that order)
--- @note: QoL to reset to default if user wants to, tho if he reloads the lua it'll save over, tough shit!
-
-
-pre_change_x = cvar.viewmodel_offset_x:get_float()
-pre_change_y = cvar.viewmodel_offset_y:get_float()
-pre_change_z = cvar.viewmodel_offset_z:get_float()
-pre_change_fov = cvar.viewmodel_fov:get_float()
-
-local viewmodel_cache = {
-    x = 0,
-    y = 0,
-    z = 0,
-    fov = 0
-}
 
 local viewmodel_changer = menu:switch("Viewmodel Changer")
     :visible(function()
@@ -593,10 +595,10 @@ local viewmodel_changer = menu:switch("Viewmodel Changer")
     end)
     :callback(function(bool)
         if not bool:get() then 
-            client.set_cvar("viewmodel_offset_x", pre_change_x)
-            client.set_cvar("viewmodel_offset_y", pre_change_y)
-            client.set_cvar("viewmodel_offset_z", pre_change_z)
-            client.set_cvar("viewmodel_fov", pre_change_fov)
+            client.set_cvar("viewmodel_offset_x", preload_viewmodel_x_cache)
+            client.set_cvar("viewmodel_offset_y", preload_viewmodel_y_cache)
+            client.set_cvar("viewmodel_offset_z", preload_viewmodel_z_cache)
+            client.set_cvar("viewmodel_fov", preload_viewmodel_fov_cache)
         elseif viewmodel_cache.x > 0 or viewmodel_cache.y > 0 or viewmodel_cache.z > 0 or viewmodel_cache.fov > 0 then
             client.set_cvar("viewmodel_offset_x", viewmodel_cache.x)
             client.set_cvar("viewmodel_offset_y", viewmodel_cache.y)
@@ -605,7 +607,7 @@ local viewmodel_changer = menu:switch("Viewmodel Changer")
         end
     end)
 
-local viewmodel_x = menu:slider("Viewmodel X", -500, 500, pre_change_x, true, nil, 0.01)
+local viewmodel_x = menu:slider("Viewmodel X", -500, 500, viewmodel_x_cache, true, nil, 0.01)
     :visible(function()
         return viewmodel_changer:get() and tabs:get() == "Visuals"
     end)
@@ -615,7 +617,7 @@ local viewmodel_x = menu:slider("Viewmodel X", -500, 500, pre_change_x, true, ni
         client.set_cvar("viewmodel_offset_x", value:get() / 100)
     end)
 
-local viewmodel_y = menu:slider("Viewmodel Y", -500, 500, pre_change_y, true, nil, 0.01)
+local viewmodel_y = menu:slider("Viewmodel Y", -500, 500, preload_viewmodel_y_cache, true, nil, 0.01)
     :visible(function()
         return viewmodel_changer:get() and tabs:get() == "Visuals"
     end)
@@ -624,7 +626,7 @@ local viewmodel_y = menu:slider("Viewmodel Y", -500, 500, pre_change_y, true, ni
         client.set_cvar("viewmodel_offset_y", value:get() / 100) 
     end)
 
-local viewmodel_z = menu:slider("Viewmodel Z", -500, 500, pre_change_z, true, nil, 0.01)
+local viewmodel_z = menu:slider("Viewmodel Z", -500, 500, preload_viewmodel_z_cache, true, nil, 0.01)
     :visible(function()
         return viewmodel_changer:get() and tabs:get() == "Visuals"
     end)
@@ -633,7 +635,7 @@ local viewmodel_z = menu:slider("Viewmodel Z", -500, 500, pre_change_z, true, ni
         client.set_cvar("viewmodel_offset_z", value:get() / 100)
     end)
 
-local viewmodel_fov = menu:slider("Viewmodel FOV", 50, 120, pre_change_fov, true)
+local viewmodel_fov = menu:slider("Viewmodel FOV", 50, 120, preload_viewmodel_fov_cache, true)
     :visible(function()
         return viewmodel_changer:get() and tabs:get() == "Visuals"
     end)
@@ -813,7 +815,7 @@ local killsay_types = menu:selectable("Killsay Types", {"Promotional", "Trashtal
         return killsay_switch:get() and tabs:get() == "Misc"
     end)
 local custom_killsay = menu:button("Import Custom Killsay List", function()
-        custom_killsays = custom_killsay_import()
+        CUSTOM_PHRASES = custom_killsay_import()
     end)
     :visible(function()
         return killsay_switch:get() and tabs:get() == "Misc" and killsay_types:get("Custom")
@@ -833,25 +835,25 @@ local function get_active_killsays()
     local selected = killsay_types:get()
 
     if table_contains(selected, "Promotional") then
-        for _, v in ipairs(promo_killsays) do
+        for _, v in ipairs(PROMO_PHRASES) do
             active[#active + 1] = v
         end
     end
 
     if table_contains(selected, "Trashtalk") then
-        for _, v in ipairs(trash_killsays) do
+        for _, v in ipairs(TRASH_PHRASES) do
             active[#active + 1] = v
         end
     end
 
     if table_contains(selected, "Fun") then
-        for _, v in ipairs(fun_killsays) do
+        for _, v in ipairs(FUN_PHRASES) do
             active[#active + 1] = v
         end
     end
 
     if table_contains(selected, "Custom") then
-        for _, v in ipairs(custom_killsays) do
+        for _, v in ipairs(CUSTOM_PHRASES) do
             active[#active + 1] = v
         end
     end
@@ -929,6 +931,11 @@ local clantag = menu:switch("Clantag", false)
                 end
         end
     end)
+
+-- Fast Ladder
+
+
+
 -- on shutdown fixing and print on full load
 
 
