@@ -175,91 +175,69 @@ local edge_yaw_hk = menu:hotkey("a", true)
         return tabs:get() == "Anti-Aim"
     end)
     :add_callback("setup_command", function(bool) --Technically the most correct, if anyone wants to contribute use this event for hotkeys if :callback doesn't work
-        ui.set(refs.edge_yaw, bool:get())
+        ui.set(refs.edge_yaw, bool:get() and edge_yaw_switch:get())
     end)
-local override_warning = menu:label("Currently haven't tested, may break") 
-    :visible(function()
-        return tabs:get() == "Anti-Aim"
-    end)
+-- local override_warning = menu:label("Currently haven't tested, may break") -- It DID break. Multiple ways too. Caching is broken(no clue how to fix), direction yaw conflicts are messed up(table with insert at index 1, and whatever's at index 1 it sets as)
+--     :visible(function()
+--         return tabs:get() == "Anti-Aim"
+--     end)
 
-local yaw_cache, yaw_numcache, fs_cache, edge_yaw_cache = ui.get(refs.yaw[1]), ui.get(refs.yaw[2]), ui.get(refs.freestanding[2]), edge_yaw_hk:get()
+-- local yaw_cache, yaw_numcache, fs_cache, edge_yaw_cache = ui.get(refs.yaw[1]), ui.get(refs.yaw[2]), ui.get(refs.freestanding[2]), edge_yaw_hk:get()
 
-local left_override = menu:hotkey("Yaw left override")
-    :visible(function()
-        return tabs:get() == "Anti-Aim"
-    end)
-    :callback(function(bool)
-        if bool:get() == false then
-            ui.set(refs.freestanding[2], fs_cache)
-            edge_yaw_hk:set(edge_yaw_cache)
-            ui.set(refs.yaw[1], yaw_cache)
-            ui.set(refs.yaw[2], yaw_numcache)
-        if bool:get() == true then
-            ui.set(refs.freestanding[2], false)
-            edge_yaw_hk:set(false)
-            ui.set(refs.yaw[1], "180")
-            ui.set(refs.yaw[2], -90)
-        end
-    end)
-local right_override = menu:hotkey("Yaw right override")
-    :visible(function()
-        return tabs:get() == "Anti-Aim"
-    end)
-    :callback(function(bool)
-        if bool:get() == false then
-            ui.set(refs.freestanding[2], fs_cache)
-            edge_yaw_hk:set(edge_yaw_cache)
-            ui.set(refs.yaw[1], yaw_cache)
-            ui.set(refs.yaw[2], yaw_numcache)
-        if bool:get() == true then
-            ui.set(refs.freestanding[2], false)
-            edge_yaw_hk:set(false)
-            ui.set(refs.yaw[1], "180")
-            ui.set(refs.yaw[2], 90)
-        end
-    end)
-local front_override = menu:hotkey("Yaw front override")
-    :visible(function()
-        return tabs:get() == "Anti-Aim"
-    end)
-    :callback(function(bool)
-        if bool:get() == false then
-            ui.set(refs.freestanding[2], fs_cache) 
-            edge_yaw_hk:set(edge_yaw_cache)
-            ui.set(refs.yaw[1], yaw_cache)
-            ui.set(refs.yaw[2], yaw_numcache)
-        if bool:get() == true then
-            ui.set(refs.freestanding[2], false)
-            edge_yaw_hk:set(false)
-            ui.set(refs.yaw[1], "180")
-            ui.set(refs.yaw[2], 180)
-        end
-    end)
-local back_override = menu:hotkey("Yaw back override")
-    :visible(function()
-        return tabs:get() == "Anti-Aim"
-    end)
-    :callback(function(bool)
-        if bool:get() == false then
-            ui.set(refs.freestanding[2], fs_cache)
-            edge_yaw_hk:set(edge_yaw_cache)
-            ui.set(refs.yaw[1], yaw_cache)
-            ui.set(refs.yaw[2], yaw_numcache)
-        if bool:get() == true then
-            ui.set(refs.freestanding[2], false)
-            edge_yaw_hk:set(false)
-            ui.set(refs.yaw[1], "180")
-            ui.set(refs.yaw[2], 0)
-        end
-    end)
+-- local left_override = menu:hotkey("Yaw left override")
+--     :visible(function()
+--         return tabs:get() == "Anti-Aim"
+--     end)
+-- local right_override = menu:hotkey("Yaw right override")
+--     :visible(function()
+--         return tabs:get() == "Anti-Aim"
+--     end)
+-- local front_override = menu:hotkey("Yaw front override")
+--     :visible(function()
+--         return tabs:get() == "Anti-Aim"
+--     end)
+-- local back_override = menu:hotkey("Yaw back override")
+--     :visible(function()
+--         return tabs:get() == "Anti-Aim"
+--     end)
 
-events.setup_command:set(function() --bandaid fix and is inefficient, though it should work for now until further integration.
-    if not left_override:get() or not right_override:get() or not front_override:get() or not back_override:get() then
-        local yaw_cache, yaw_numcache, fs_cache, edge_yaw_cache = ui.get(refs.yaw[1]), ui.get(refs.yaw[2]), ui.get(refs.freestanding[2]), edge_yaw_hk:get() --@note: try ui.get with multiple arguements
-    else
-        return
-    end
-end)
+-- events.setup_command:set(function() --bandaid fix and is inefficient, though it should work for now until further integration.
+--     if not (left_override:get() or right_override:get() or front_override:get() or back_override:get()) then
+--             yaw_cache, yaw_numcache, fs_cache, edge_yaw_cache = ui.get(refs.yaw[1]), ui.get(refs.yaw[2]), ui.get(refs.freestanding[2]), edge_yaw_switch:get() --@note: try ui.get with multiple arguements
+--             ui.set(refs.yaw[1], yaw_cache)
+--             ui.set(refs.yaw[2], yaw_numcache)
+--             ui.set(refs.freestanding[2], fs_cache)
+--             edge_yaw_hk:set(edge_yaw_cache)
+--         return
+--     end
+-- local overrides = {}
+--     if left_override:get() then
+--         ui.set(refs.freestanding[2], false)
+--         edge_yaw_switch:set(false)
+--         table.insert(overrides, "left")
+--         ui.set(refs.yaw[1], "180")
+--         ui.set(refs.yaw[2], -90)
+--     elseif right_override:get() then
+--         ui.set(refs.freestanding[2], false)
+--         edge_yaw_switch:set(false)
+--         table.insert(overrides, "right")
+--         ui.set(refs.yaw[1], "180")
+--         ui.set(refs.yaw[2], 90)
+--     elseif front_override:get() then
+--         ui.set(refs.freestanding[2], false)
+--         edge_yaw_switch:set(false)
+--         table.insert(overrides, "front")
+--         ui.set(refs.yaw[1], "180")
+--         ui.set(refs.yaw[2], 180)
+--     else
+--         ui.set(refs.freestanding[2], false)
+--         edge_yaw_switch:set(false)
+--         print("BACK IS ON")
+--         table.insert(overrides, "back")
+--         ui.set(refs.yaw[1], "180")
+--         ui.set(refs.yaw[2], 0)
+--     end
+-- end)
 
 -- [Visuals]
 
@@ -639,9 +617,9 @@ local viewmodel_fov = menu:slider("Viewmodel FOV", 50, 120, preload_viewmodel_fo
     :visible(function()
         return viewmodel_changer:get() and tabs:get() == "Visuals"
     end)
-    :callback(function(self)
-        viewmodel_cache.fov = self:get()
-        client.set_cvar("viewmodel_fov", self:get())
+    :callback(function(value)
+        viewmodel_cache.fov = value:get()
+        client.set_cvar("viewmodel_fov", value:get())
     end)
 
 
