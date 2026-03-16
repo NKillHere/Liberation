@@ -375,9 +375,9 @@ local function draw_spectators(check, background_color, text_color)
     if entity.is_alive(LOCAL_PLAYER) then
         target = LOCAL_PLAYER
     else
-        local observed = entity.get_prop(LOCAL_PLAYER, 'm_hObserverTarget')
-        if observed ~= nil and observed <= 64 then
-            target = observed
+        local spectated = entity.get_prop(LOCAL_PLAYER, 'm_hObserverTarget')
+        if spectated ~= nil and spectated <= 65 then
+            target = spectated
         end
     end
 
