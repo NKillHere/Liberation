@@ -440,7 +440,7 @@ local function draw_indicators(check, color)
     if not check then
         return
     end
-    if not entity.is_alive(LOCAL_PLAYER) then
+    if not (entity.is_alive(LOCAL_PLAYER)) then
         return
     end
     local col_r, col_g, col_b, col_a = color:get()
@@ -457,12 +457,12 @@ local function draw_indicators(check, color)
         return vector(renderer.measure_text(main_flag, txt))
     end
     local function scope_check(txt)
-        if entity.get_prop(LOCAL_PLAYER, "m_bIsScoped") ~= 0 then
+        if not entity.get_prop(LOCAL_PLAYER, "m_bIsScoped") ~= 0 then
+            return 0
+        else
             string.gsub(main_flag, "c", "r")
             string.gsub(sub_flag, "c", "r")
             return measure_txt(txt).x / -1.75
-        else 
-            return 0
         end
     end
 
@@ -548,7 +548,7 @@ local function dmg_indicator(check)
     if not check then
         return
     end
-    if not entity.is_alive(LOCAL_PLAYER) then
+    if not (entity.is_alive(LOCAL_PLAYER)) then
         return
     end
     
