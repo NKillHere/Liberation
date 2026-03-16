@@ -1,3 +1,4 @@
+
 -- Welcome to the pit. If you're here to contribute, do send a pull request on github.com/NKillHere/Liberation. Thanks in advance.
 -- If you're here to copy code, follow the GPLv3 license terms.
 
@@ -108,6 +109,7 @@ local refs = {
 
 -- |Variables|
 
+
 -- [Visuals]
 -- Viewmodel Changer
 -- @note: QoL to reset to default if user wants to, tho if he reloads the lua it'll save over, tough shit!
@@ -130,7 +132,7 @@ local tabs = menu:combo("Tab", "Main", "Anti-Aim", "Visuals", "Misc")
 
 
 -- [Main]
-local entrance = menu:label("Welcome to liberation, ".. LOCAL_PLAYER)
+local entrance = menu:label("Welcome to liberation, ".. USER_NAME)
     :visible(function()
         return tabs:get() == "Main"
     end)
@@ -155,11 +157,6 @@ local accent_color = menu:color_picker("Accent Color", ui.get(refs.menu_color))
     end)
     :callback(function(color)
         ui.set(refs.menu_color, color:get())
-    end)
-
-menu:label("Spectators list isn't working atm, will fix") -- This will take a while unfortunately due to somehow the logic not working even after calling for expert help + me needing someone to test it with since it doesn't work with bots
-    :visible(function()
-        return tabs:get() == "Main"
     end)
 
 
@@ -335,47 +332,81 @@ local widget_txt = menu:color_picker("Watermark Text", 240, 160, 180, 250)
     end)
 
 -- Spectator subsection
--- local spectator_x = menu:slider("Spectator X", 0, SCREEN_SIZE.x, SCREEN_SIZE.x / 4, true, "px")
---     :visible(function()
---         return tabs:get() == "Visuals" and widget_types:get("Spectators list")
---     end)
--- local spectator_y = menu:slider("Spectator Y", 0, SCREEN_SIZE.y, SCREEN_SIZE.y / 4, true, "px")
---     :visible(function()
---         return tabs:get() == "Visuals" and widget_types:get("Spectators list")
---     end)
-
-local function get_spectators() --Will be redone like the indicators section for efficiency's sake.
-    local spectators = {}
-    local local_player = entity.get_prop(LOCAL_PLAYER, "m_hObserverTarget")
-    local players = globals.maxplayers()
-
-    ent = 1
-    for ent = 1, players+1 do
-        local target_player = entity.get_prop(ent, "m_hObserverTarget")
-        
-        if target_player == local_player then
-            local spectator = entity.get_player_name(ent)
-            table.insert(spectators, {spectator = spectator, ent = ent})
-        end
-    end
-    return spectators
-end
-
-local function spectators_list(check, background_color, text_color)
+local spectator_x = menu:slider("Spectator X", 0, SCREEN_SIZE.x, SCREEN_SIZE.x / 4, true, "px")
+    :visible(function()
+        return tabs:get() == "Visuals" and widget_types:get("Spectators list")
+    end)
+local spectator_y = menu:slider("Spectator Y", 0, SCREEN_SIZE.y, SCREEN_SIZE.y / 4, true, "px")
+    :visible(function()
+        return tabs:get() == "Visuals" and widget_types:get("Spectators list")
+    end)
+local function draw_spectators(check, background_color, text_color)
     if not check then
         return
     end
 
+    local spectators = {}
+    local spectated = LOCAL_PLAYER
+    for i = 1, globals.maxplayers() do
+        if entity.get_classname(i) == 'CCSPlayer' then
+            local target = entity.get_prop(i, 'm_hObserverTarget')
+            local is_spectating = target ~= nil and target <= 64 and not entity.is_alive(i)
+            if is_spectating then
+                if spectators[target] == nil then
+                    spectators[target] = {}
+                end
+                if i == LOCAL_PLAYER then
+                    goto skip
+                end
+                table.insert(spectators[target], i)
+                ::skip::
+            end
+        end
+    end
+
     local bkg_r, bkg_g, bkg_b, bkg_a = background_color:get()
     local txt_r, txt_g, txt_b, txt_a = text_color:get()
-    local spectators = get_spectators()
     local spectator_txt = "Spectators"
-    local text_size = vector(renderer.measure_text("d", spectator_txt))
-    -- note to self: spectactor_x and y should be the things I need to change in order to implement the drag system, although I'm not 100% sure...
-    -- x,y, width, height, r,g,b,a(I am fucking sick of looking on the docs constantly)
-    renderer.rectangle(spectator_x:get() - text_size.x - 40, spectator_y:get(), text_size.x + 80, text_size.y + 8, bkg_r, bkg_g, bkg_b, bkg_a)
-    renderer.text(spectator_x:get() - text_size.x - 0, spectator_y:get() + 3, txt_r, txt_g, txt_b, txt_a, "d", 0, spectator_txt)
-    renderer.text(spectator_x:get() - text_size.x, spectator_y:get() - 20, 255, 255, 255, 255, "d", 0, spectators)
+    local text_size_main = vector(renderer.measure_text("d", spectator_txt))
+
+    renderer.rectangle(spectator_x:get() - text_size_main.x, spectator_y:get(), text_size_main.x + 80, text_size_main.y + 8, bkg_r, bkg_g, bkg_b, bkg_a)
+    renderer.text(spectator_x:get() - text_size_main.x + 40, spectator_y:get() + 3, txt_r, txt_g, txt_b, txt_a, "d", 0, spectator_txt)
+
+    if entity.is_alive(LOCAL_PLAYER) then
+        target = LOCAL_PLAYER
+    else
+        local observed = entity.get_prop(LOCAL_PLAYER, 'm_hObserverTarget')
+        if observed ~= nil and observed <= 64 then
+            target = observed
+        end
+    end
+
+    if target == nil then return end
+    local target_spectators = spectators[target]
+    if target_spectators == nil then return end
+
+
+    
+    local spectators_x = spectator_x:get() - 38
+    local spectators_y = spectator_y:get() + 24
+
+    local height_addition = 0
+
+    for _, index in pairs(target_spectators) do
+        local name = entity.get_player_name(index)
+        if not name then 
+            goto continue 
+        end
+
+        local text_size_sub = vector(renderer.measure_text("d", name))
+        if text_size_sub.y == 0 then goto continue end
+
+        renderer.text(spectators_x, spectators_y + height_addition, 255, 255, 255, 255, "d", 0, name)
+
+        height_addition = height_addition + (text_size_sub.y + 1)
+
+        ::continue::
+    end
 end
 
 --Crosshair indicator subsection
@@ -409,7 +440,9 @@ local function draw_indicators(check, color)
     if not check then
         return
     end
-
+    if not entity.is_alive(LOCAL_PLAYER) then
+        return
+    end
     local col_r, col_g, col_b, col_a = color:get()
     local crosshair_indicators = {}
     local height_decrease = 16
@@ -515,6 +548,10 @@ local function dmg_indicator(check)
     if not check then
         return
     end
+    if not entity.is_alive(LOCAL_PLAYER) then
+        return
+    end
+    
     local flag = ""
     local alpha = 177
     local dmg = ui.get(refs.min_dmg)
@@ -537,7 +574,7 @@ end
 
 events.paint:set(function()
     watermark(widget_types:get("Watermark"), widget_background, widget_txt)
-    -- spectators_list(widget_types:get("Spectators list"), widget_background, widget_txt)
+    draw_spectators(widget_types:get("Spectators list"), widget_background, widget_txt)
     draw_indicators(crosshair_switch:get() or key, indicator_crosshair_color)
     dmg_indicator(min_dmg_ind:get() ~= "None")
     -- edge_yaw_toggle(edge_yaw_switch:get(), edge_yaw_hk:get())
