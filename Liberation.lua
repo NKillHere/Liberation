@@ -457,7 +457,7 @@ local function draw_indicators(check, color)
         return vector(renderer.measure_text(main_flag, txt))
     end
     local function scope_check(txt)
-        if not entity.get_prop(LOCAL_PLAYER, "m_bIsScoped") ~= 0 then
+        if entity.get_prop(LOCAL_PLAYER, "m_bIsScoped") == 0 then
             return 0
         else
             string.gsub(main_flag, "c", "r")
