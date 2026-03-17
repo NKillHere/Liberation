@@ -2,6 +2,12 @@
 -- Welcome to the pit. If you're here to contribute, do send a pull request on github.com/NKillHere/Liberation. Thanks in advance.
 -- If you're here to copy code, follow the GPLv3 license terms.
 
+-- |Information|
+-- We(by that I mean me, NKill sadly) plan to change the way how functions, variables and constants are written to make them more easily legible about what they are.
+-- Additionally, there will be some accepted shorthand forms to write the name of some common terms for ease-of-use, check the wiki for more information.
+-- Constants will remain as SCREAMING_SNAKE_CASE, functions will be in PascalCase,
+-- menu elements in camelCase(with it functioning kindaLikethis when 3 or more words are concerned) and variables in snake_case, which includes references.
+
 -- |Libraries|
 
 local lapi = require "gamesense/lapi" or error("LAPI is required for this lua, download from https://github.com/Tony1337-bit/library")
@@ -126,32 +132,32 @@ local viewmodel_cache = {
 }
 
 -- |Menu|
-local menu = lui.group("LUA", "A")
-local side_menu = lui.group("LUA", "B")
-local tabs = menu:combo("Tab", "Main", "Anti-Aim", "Visuals", "Misc")
+local mainMenu = lui.group("LUA", "A")
+local sideMenu = lui.group("LUA", "B")
+local tabs = mainMenu:combo("Tab", "Main", "Anti-Aim", "Visuals", "Misc")
 
 
 -- [Main]
-local entrance = menu:label("Welcome to liberation, ".. USER_NAME)
+local welcomeMessage = mainMenu:label("Welcome to liberation, ".. USER_NAME)
     :visible(function()
         return tabs:get() == "Main"
     end)
-local build = menu:label("Build: Developer") -- Currently hardcoded, genuienly don't think I can do this in any other way lol, I'll have to make a separate branch for each type of releases.
+local buildType = mainMenu:label("Build: Developer") -- Currently hardcoded, genuienly don't think I can do this in any other way lol, I'll have to make a separate branch for each type of releases.
     :visible(function()
         return tabs:get() == "Main"
     end)
-local fluxer_button = menu:button("Official Fluxer", function()
+local fluxerButton = mainMenu:button("Official Fluxer", function()
         panorama.open().SteamOverlayAPI.OpenExternalBrowserURL("https://fluxer.gg/iZez6vyQ")
     end)
     :visible(function()
         return tabs:get() == "Main"
     end)
 
-menu:label("Accent Color")
+mainMenu:label("Accent Color")
     :visible(function()
         return tabs:get() == "Main"
     end)
-local accent_color = menu:color_picker("Accent Color", ui.get(refs.menu_color))
+local accentColor = mainMenu:color_picker("Accent Color", ui.get(refs.menu_color))
     :visible(function()
         return tabs:get() == "Main"
     end)
@@ -163,37 +169,37 @@ local accent_color = menu:color_picker("Accent Color", ui.get(refs.menu_color))
 -- [Anti-Aim] 
 -- Kind of a shell until I really get into writing the proper anti-aim, got some great ideas for defensive shenanigans and $tatic $upremacy
 
-local edge_yaw_switch = menu:switch("Edge Yaw")
+local edgeYaw = mainMenu:switch("Edge Yaw")
     :visible(function()
         return tabs:get() == "Anti-Aim"
     end)
-local edge_yaw_hk = menu:hotkey("a", true)
+local edgeYawhotkey = mainMenu:hotkey("a", true)
     :visible(function()
         return tabs:get() == "Anti-Aim"
     end)
     :add_callback("setup_command", function(bool) --Technically the most correct, if anyone wants to contribute use this event for hotkeys if :callback doesn't work
-        ui.set(refs.edge_yaw, bool:get() and edge_yaw_switch:get())
+        ui.set(refs.edge_yaw, bool:get() and edgeYawhotkey:get())
     end)
--- local override_warning = menu:label("Currently haven't tested, may break") -- It DID break. Multiple ways too. Caching is broken(no clue how to fix), direction yaw conflicts are messed up(table with insert at index 1, and whatever's at index 1 it sets as)
+-- local override_warning = mainMenu:label("Currently haven't tested, may break") -- It DID break. Multiple ways too. Caching is broken(no clue how to fix), direction yaw conflicts are messed up(table with insert at index 1, and whatever's at index 1 it sets as)
 --     :visible(function()
 --         return tabs:get() == "Anti-Aim"
 --     end)
 
 -- local yaw_cache, yaw_numcache, fs_cache, edge_yaw_cache = ui.get(refs.yaw[1]), ui.get(refs.yaw[2]), ui.get(refs.freestanding[2]), edge_yaw_hk:get()
 
--- local left_override = menu:hotkey("Yaw left override")
+-- local left_override = mainMenu:hotkey("Yaw left override")
 --     :visible(function()
 --         return tabs:get() == "Anti-Aim"
 --     end)
--- local right_override = menu:hotkey("Yaw right override")
+-- local right_override = mainMenu:hotkey("Yaw right override")
 --     :visible(function()
 --         return tabs:get() == "Anti-Aim"
 --     end)
--- local front_override = menu:hotkey("Yaw front override")
+-- local front_override = mainMenu:hotkey("Yaw front override")
 --     :visible(function()
 --         return tabs:get() == "Anti-Aim"
 --     end)
--- local back_override = menu:hotkey("Yaw back override")
+-- local back_override = mainMenu:hotkey("Yaw back override")
 --     :visible(function()
 --         return tabs:get() == "Anti-Aim"
 --     end)
@@ -241,40 +247,40 @@ local edge_yaw_hk = menu:hotkey("a", true)
 -- Widgets, contains Watermark and Spectator list(for now) in that order
 
 -- Watermark subsection
-local function get_fps()
+local function GetFPS()
     if globals.frametime() > 0 then
         return math.ceil(1 / globals.frametime())
     end
     return 0
 end
 
-local widget_switch = menu:switch("Widgets")
+local widgetSwitch = mainMenu:switch("Widgets")
     :visible(function()
         return tabs:get() == "Visuals"
     end)
-local widget_types = menu:selectable("Widget Types", "Watermark", "Spectators list", "Keybinds List")
+local widgetSypes = mainMenu:selectable("Widget Types", "Watermark", "Spectators list", "Keybinds List")
     :visible(function()
-        return tabs:get() == "Visuals" and widget_switch:get()
+        return tabs:get() == "Visuals" and widgetSwitch:get()
     end)
     
-local watermark_types = menu:selectable("Watermark Addons", "Script name", "Name", "FPS", "Ping", "Tick rate", "Time(24h)")
+local watermarkTypes = mainMenu:selectable("Watermark Addons", "Script name", "Name", "FPS", "Ping", "Tick rate", "Time(24h)")
     :visible(function() 
-        return tabs:get() == "Visuals" and widget_types:get("Watermark") and widget_switch:get()
+        return tabs:get() == "Visuals" and widget_types:get("Watermark") and widgetSwitch:get()
     end)
 
-local watermark_map = function()
+local WatermarkMap = function()
     local state = {}
-    if watermark_types:get("Script name") then
+    if watermarkTypes:get("Script name") then
         table.insert(state, "liberation")
     end
-    if watermark_types:get("Name") then
+    if watermarkTypes:get("Name") then
         table.insert(state, USER_NAME)
     end
-    if watermark_types:get("FPS") then
-        local watermark_fps = string.format("fps: %03d", get_fps())
+    if watermarkTypes:get("FPS") then
+        local watermark_fps = string.format("fps: %03d", GetFPS())
         table.insert(state, watermark_fps)
     end
-    if watermark_types:get("Ping") then
+    if watermarkTypes:get("Ping") then
         local ping = math.ceil(client.real_latency() * 1000)
         if math.ceil(client.latency() * 1000) == 0 then
             ping = 0 
@@ -282,11 +288,11 @@ local watermark_map = function()
         local watermark_ping = string.format("rtt: %dms", ping)
         table.insert(state, watermark_ping)
     end
-    if watermark_types:get("Tick rate") then
+    if watermarkTypes:get("Tick rate") then
         local watermark_tickrate = string.format("rate: %d", math.ceil(1 / globals.tickinterval()))
         table.insert(state, watermark_tickrate)
     end
-    if watermark_types:get("Time(24h)") then
+    if watermarkTypes:get("Time(24h)") then
         local time = {client.system_time()}
         local watermark_time = string.format("%02d:%02d:%02d", time[1], time[2], time[3])
         table.insert(state, watermark_time)
@@ -295,14 +301,14 @@ local watermark_map = function()
     return #state > 0 and table.concat(state, " | " or "Liberation")
 end
 
-local function watermark(check, background_color, text_color)
+local function Watermark(check, background_color, text_color)
     if not check then
         return
     end
     local bkg_r, bkg_g, bkg_b, bkg_a = background_color:get()
     local txt_r, txt_g, txt_b, txt_a = text_color:get()
 
-    local watermark_txt = watermark_map()
+    local watermark_txt = WatermarkMap()
     if watermark_txt == false then
         watermark_txt = "liberation"
     end
@@ -313,34 +319,34 @@ local function watermark(check, background_color, text_color)
     renderer.text(SCREEN_SIZE.x - text_size.x - 15, 13, txt_r, txt_g, txt_b, txt_a, "d", 0, watermark_txt)
 end
 
-local widget_bkg_label = menu:label("Widget Background")
+local widgetBackgroundlabel = mainMenu:label("Widget Background")
     :visible(function()
         return tabs:get() == "Visuals" and widget_types:get("Watermark")
     end)
-local widget_background = menu:color_picker("Watermark Background", 240,110,140,130)
+local widgetBackground = mainMenu:color_picker("Watermark Background", 240,110,140,130)
     :visible(function()
         return tabs:get() == "Visuals" and widget_types:get("Watermark")
     end)
 
-local widget_txt_label = menu:label("Widget Text")
+local widgetTextlabel = mainMenu:label("Widget Text")
     :visible(function()
         return tabs:get() == "Visuals" and widget_types:get("Watermark" or "Spectator list" or "Keybinds List")
     end)
-local widget_txt = menu:color_picker("Watermark Text", 240, 160, 180, 250)
+local widgetTxt = mainMenu:color_picker("Watermark Text", 240, 160, 180, 250)
     :visible(function()
         return tabs:get() == "Visuals" and widget_types:get("Watermark")
     end)
 
 -- Spectator subsection
-local spectator_x = menu:slider("Spectator X", 0, SCREEN_SIZE.x, SCREEN_SIZE.x / 4, true, "px")
+local spectatorX = mainMenu:slider("Spectator X", 0, SCREEN_SIZE.x, SCREEN_SIZE.x / 4, true, "px") -- REALLY gotta change this with the drag system soon..
     :visible(function()
         return tabs:get() == "Visuals" and widget_types:get("Spectators list")
     end)
-local spectator_y = menu:slider("Spectator Y", 0, SCREEN_SIZE.y, SCREEN_SIZE.y / 4, true, "px")
+local spectatorY = mainMenu:slider("Spectator Y", 0, SCREEN_SIZE.y, SCREEN_SIZE.y / 4, true, "px")
     :visible(function()
         return tabs:get() == "Visuals" and widget_types:get("Spectators list")
     end)
-local function draw_spectators(check, background_color, text_color)
+local function DrawSpectators(check, background_color, text_color)
     if not check then
         return
     end
@@ -369,8 +375,8 @@ local function draw_spectators(check, background_color, text_color)
     local spectator_txt = "Spectators"
     local text_size_main = vector(renderer.measure_text("d", spectator_txt))
 
-    renderer.rectangle(spectator_x:get() - text_size_main.x, spectator_y:get(), text_size_main.x + 80, text_size_main.y + 8, bkg_r, bkg_g, bkg_b, bkg_a)
-    renderer.text(spectator_x:get() - text_size_main.x + 40, spectator_y:get() + 3, txt_r, txt_g, txt_b, txt_a, "d", 0, spectator_txt)
+    renderer.rectangle(spectatorX:get() - text_size_main.x, spectatorY:get(), text_size_main.x + 80, text_size_main.y + 8, bkg_r, bkg_g, bkg_b, bkg_a)
+    renderer.text(spectatorX:get() - text_size_main.x + 40, spectatorY:get() + 3, txt_r, txt_g, txt_b, txt_a, "d", 0, spectator_txt)
 
     if entity.is_alive(LOCAL_PLAYER) then
         target = LOCAL_PLAYER
@@ -387,8 +393,8 @@ local function draw_spectators(check, background_color, text_color)
 
 
     
-    local spectators_x = spectator_x:get() - 38
-    local spectators_y = spectator_y:get() + 24
+    local spectators_x = spectatorX:get() - 38
+    local spectators_y = spectatorY:get() + 24
 
     local height_addition = 0
 
@@ -410,33 +416,33 @@ local function draw_spectators(check, background_color, text_color)
 end
 
 --Crosshair indicator subsection
-local crosshair_switch = menu:switch("Crosshair indicator")
+local crosshairSwitch = mainMenu:switch("Crosshair indicator")
     :visible(function()
         return tabs:get() == "Visuals"
     end)
-local indicator_crosshair_color = menu:color_picker("Crosshair indicator color", accent_color:get())
+local indicatorCrosshaircolor = mainMenu:color_picker("Crosshair indicator color", accentColor:get())
     :visible(function()
         return tabs:get() == "Visuals"
     end)
-local crosshair_main = menu:combo("Main font", "Default", "Bold", "Pixel")
+local crosshairMain = mainMenu:combo("Main font", "Default", "Bold", "Pixel")
     :visible(function()
         return tabs:get() == "Visuals" and crosshair_switch:get()
     end)
-local crosshair_sub = menu:combo("Sub font", "Default", "Bold", "Pixel")
+local crosshairSub = mainMenu:combo("Sub font", "Default", "Bold", "Pixel")
     :visible(function()
         return tabs:get() == "Visuals" and crosshair_switch:get()
     end)
-local crosshair_case = menu:combo("Sub case", "Uppercase", "Lowercase")
+local crosshairCase = mainMenu:combo("Sub case", "Uppercase", "Lowercase")
     :visible(function()
         return tabs:get() == "Visuals" and crosshair_switch:get()
     end)
 
-local min_dmg_ind = menu:combo("Minimum damage number", "None", "Default", "Bold", "Pixel")
+local minDmgindicator = mainMenu:combo("Minimum damage number", "None", "Default", "Bold", "Pixel")
     :visible(function()
         return tabs:get() == "Visuals"
     end)
 
-local function draw_indicators(check, color) 
+local function DrawIndicators(check, color) 
     if not check then
         return
     end
@@ -466,40 +472,40 @@ local function draw_indicators(check, color)
         end
     end
 
-    if crosshair_main:get() == "Default" then
+    if crosshairMain:get() == "Default" then
         main_flag = "cd"
         renderer.text(MID_SCREEN.x - scope_check(lib), MID_SCREEN.y + height_decrease, col_r, col_g, col_b, col_a, main_flag, 0, lib)
-    elseif crosshair_main:get() == "Bold" then
+    elseif crosshairMain:get() == "Bold" then
         main_flag = "cdb"
         renderer.text(MID_SCREEN.x - scope_check(lib), MID_SCREEN.y + height_decrease, col_r, col_g, col_b, col_a, main_flag, 0, lib)
     else
         main_flag = "-c"
         renderer.text(MID_SCREEN.x - scope_check(lib), MID_SCREEN.y + height_decrease, col_r, col_g, col_b, col_a, main_flag, 0, string.upper(lib))
     end
-    if crosshair_sub:get() == "Default" then
+    if crosshairSub:get() == "Default" then
         sub_flag = "cd"
-    elseif crosshair_sub:get() == "Bold" then
+    elseif crosshairSub:get() == "Bold" then
         sub_flag = "cdb"
     else
         sub_flag = "-c" -- looks like ass with lowercase lmao
     end
 
     if ui.get(refs.fake_duck) then
-        if crosshair_case:get() == "Lowercase" then
+        if crosshairCase:get() == "Lowercase" then
             table.insert(crosshair_indicators, "fakeduck")
         else
             table.insert(crosshair_indicators, "FD")
         end
         table.insert(indicators, "Fake Duck")
     elseif ui.get(refs.double_tap[2]) then
-        if crosshair_case:get() == "Lowercase" then
+        if crosshairCase:get() == "Lowercase" then
             table.insert(crosshair_indicators, "doubletap")
         else
             table.insert(crosshair_indicators, "DT")
         end
         table.insert(indicators, "Double Tap")
     elseif ui.get(refs.hide_shots[2]) then
-        if crosshair_case:get() == "Lowercase" then
+        if crosshairCase:get() == "Lowercase" then
             table.insert(crosshair_indicators, "hideshots")
         else
             table.insert(crosshair_indicators, "HS")
@@ -507,7 +513,7 @@ local function draw_indicators(check, color)
         table.insert(indicators, "Hide Shots")
     end
     if ui.get(refs.edge_yaw) then
-        if crosshair_case:get() == "Lowercase" then
+        if crosshairCase:get() == "Lowercase" then
             table.insert(crosshair_indicators, "edgeyaw")
         else
             table.insert(crosshair_indicators, "EDGE")
@@ -517,7 +523,7 @@ local function draw_indicators(check, color)
         end
         table.insert(indicators, "Edge Yaw")
     elseif ui.get(refs.freestanding[2]) then
-        if crosshair_case:get() == "Lowercase" then
+        if crosshairCase:get() == "Lowercase" then
             table.insert(crosshair_indicators, "freestand")
         else
             table.insert(crosshair_indicators, "FS")
@@ -530,7 +536,7 @@ local function draw_indicators(check, color)
         else
             new_dmg_full = ui.get(refs.min_dmg_ovr[3])
         end
-        if crosshair_case:get() == "Lowercase" then
+        if crosshairCase:get() == "Lowercase" then
             table.insert(crosshair_indicators, 1, "damage")
         else
             table.insert(crosshair_indicators, 1, "DMG")
@@ -544,7 +550,7 @@ local function draw_indicators(check, color)
     end
 end
 
-local function dmg_indicator(check)
+local function DmgIndicator(check)
     if not check then
         return
     end
@@ -556,9 +562,9 @@ local function dmg_indicator(check)
     local alpha = 177
     local dmg = ui.get(refs.min_dmg)
 
-    if min_dmg_ind:get() == "Default" then
+    if minDmgindicator:get() == "Default" then
         flag = "cd"
-    elseif min_dmg_ind:get() == "Bold" then
+    elseif minDmgindicator:get() == "Bold" then
         flag = "cdb"
     else
         flag = "-c"
@@ -573,16 +579,16 @@ end
 -- gotta ask mobby about how drag works so I can implement it properly for UI elements, including crosshair indicator at some point
 
 events.paint:set(function()
-    watermark(widget_types:get("Watermark"), widget_background, widget_txt)
-    draw_spectators(widget_types:get("Spectators list"), widget_background, widget_txt)
-    draw_indicators(crosshair_switch:get() or key, indicator_crosshair_color)
-    dmg_indicator(min_dmg_ind:get() ~= "None")
+    Watermark(widget_types:get("Watermark"), widgetBackground, widgetTxt)
+    DrawSpectators(widget_types:get("Spectators list"), widgetBackground, widgetTxt)
+    DrawIndicators(crosshair_switch:get() or key, indicatorCrosshaircolor)
+    DmgIndicator(minDmgindicator:get() ~= "None")
     -- edge_yaw_toggle(edge_yaw_switch:get(), edge_yaw_hk:get())
 end)
 
 -- Aspect Ratio + its value that is visible only when switch is on
 
-local aspect_ratio = menu:switch("Aspect Ratio")
+local aspectRatio = mainMenu:switch("Aspect Ratio")
     :visible(function()
         return tabs:get() == "Visuals"
     end)
@@ -591,9 +597,9 @@ local aspect_ratio = menu:switch("Aspect Ratio")
     end)
 aspect_ratios = {[177] = '16:9', [161] = '16:10', [150] = '3:2', [133] = '4:3', [125] = '5:4'}
 
-local aspect_ratio_value = menu:slider("Aspect Ratio Value", 0, 250, 150, true, false, 1, aspect_ratios)
+local aspectRatiovalue = mainMenu:slider("Aspect Ratio Value", 0, 250, 150, true, false, 1, aspect_ratios)
     :visible(function()
-        return aspect_ratio:get() and tabs:get() == "Visuals"
+        return aspectRatio:get() and tabs:get() == "Visuals"
     end)
     :callback(function(value)
         if not entity.is_alive(LOCAL_PLAYER) then
@@ -604,7 +610,7 @@ local aspect_ratio_value = menu:slider("Aspect Ratio Value", 0, 250, 150, true, 
 
 -- Viewmodel changer switch which reveals x, y, z and fov(in that order)
 
-local viewmodel_changer = menu:switch("Viewmodel Changer")
+local viewmodelChanger = mainMenu:switch("Viewmodel Changer")
     :visible(function()
         return tabs:get() == "Visuals"
     end)
@@ -622,9 +628,9 @@ local viewmodel_changer = menu:switch("Viewmodel Changer")
         end
     end)
 
-local viewmodel_x = menu:slider("Viewmodel X", -500, 500, viewmodel_x_cache, true, nil, 0.01)
+local viewmodelX = mainMenu:slider("Viewmodel X", -500, 500, viewmodel_x_cache, true, nil, 0.01)
     :visible(function()
-        return viewmodel_changer:get() and tabs:get() == "Visuals"
+        return viewmodelChanger:get() and tabs:get() == "Visuals"
     end)
 
     :callback(function(value)
@@ -632,27 +638,27 @@ local viewmodel_x = menu:slider("Viewmodel X", -500, 500, viewmodel_x_cache, tru
         client.set_cvar("viewmodel_offset_x", value:get() / 100)
     end)
 
-local viewmodel_y = menu:slider("Viewmodel Y", -500, 500, preload_viewmodel_y_cache, true, nil, 0.01)
+local viewmodelY = mainMenu:slider("Viewmodel Y", -500, 500, preload_viewmodel_y_cache, true, nil, 0.01)
     :visible(function()
-        return viewmodel_changer:get() and tabs:get() == "Visuals"
+        return viewmodelChanger:get() and tabs:get() == "Visuals"
     end)
     :callback(function(value)
         viewmodel_cache.y = value:get() / 100
         client.set_cvar("viewmodel_offset_y", value:get() / 100) 
     end)
 
-local viewmodel_z = menu:slider("Viewmodel Z", -500, 500, preload_viewmodel_z_cache, true, nil, 0.01)
+local viewmodelZ = mainMenu:slider("Viewmodel Z", -500, 500, preload_viewmodel_z_cache, true, nil, 0.01)
     :visible(function()
-        return viewmodel_changer:get() and tabs:get() == "Visuals"
+        return viewmodelChanger:get() and tabs:get() == "Visuals"
     end)
     :callback(function(value)
         viewmodel_cache.z = value:get() / 100
         client.set_cvar("viewmodel_offset_z", value:get() / 100)
     end)
 
-local viewmodel_fov = menu:slider("Viewmodel FOV", 50, 120, preload_viewmodel_fov_cache, true)
+local viewmodelFOV = mainMenu:slider("Viewmodel FOV", 50, 120, preload_viewmodel_fov_cache, true)
     :visible(function()
-        return viewmodel_changer:get() and tabs:get() == "Visuals"
+        return viewmodelChanger:get() and tabs:get() == "Visuals"
     end)
     :callback(function(value)
         viewmodel_cache.fov = value:get()
@@ -681,11 +687,11 @@ local viewmodel_fov = menu:slider("Viewmodel FOV", 50, 120, preload_viewmodel_fo
 -- local hitsound_list_choice = ""
 -- local killsound_list_choice = ""
 
--- local hitsound_switch = menu:switch("Custom Hitsound")
+-- local hitsound_switch = mainMenu:switch("Custom Hitsound")
 --     :visible(function()
 --         return tabs:get() == "Misc"
 --     end)
--- local hitsound_types = side_menu:selectable("Hitsound types", {"On hit", "On kill"})
+-- local hitsound_types = sideMenu:selectable("Hitsound types", {"On hit", "On kill"})
 --     :visible(function()
 --         return hitsound_switch:get() and tabs:get() == "Misc"
 --     end)
@@ -708,28 +714,28 @@ local viewmodel_fov = menu:slider("Viewmodel FOV", 50, 120, preload_viewmodel_fo
 --             --Figure out playing sounds, easiest way is to convince Mobby to add sound playing due to usefulness in luas
 --         filesystem.close(can)
 --     end)
--- local hitsound_name = side_menu:list("Hitsounds", hitsound_refresh())
+-- local hitsound_name = sideMenu:list("Hitsounds", hitsound_refresh())
 --     :visible(function()
 --         return hitsound_switch:get() and tabs:get() == "Misc"
 --     end)
 --     :callback(function(choice)
 --         hitsound_list_choice = choice:get()
 --     end)
--- local hitsound_refresh = side_menu:button("Refresh hitsounds", 
+-- local hitsound_refresh = sideMenu:button("Refresh hitsounds", 
 --     function()
 --         hitsound_refresh()
 --     end)
 --     :visible(function()
 --         return tabs:get() == "Misc" and hitsound_switch:get()
 --     end)
--- local hitsound_button = side_menu:button("Select as Hitsound", function()
+-- local hitsound_button = sideMenu:button("Select as Hitsound", function()
 --         ui.set(refs.default_hitsound, false)
 --         hitsound_choice = hitsound_list_choice
 --     end)
 --     :visible(function()
 --         return tabs:get() == "Misc" and hitsound_types:get("On hit") and hitsound_switch:get()
 --     end)
--- local killsound_button = side_menu:button("Select as Killsound",function()
+-- local killsound_button = sideMenu:button("Select as Killsound",function()
 --         killsound_choice = killsound_list_choice
 --     end)
 --     :visible(function()
@@ -745,7 +751,7 @@ local logs = {
     bt = nil
 }
 
-local logs_switch = menu:switch("Logs")
+local logsSwitch = mainMenu:switch("Logs")
     :visible(function()
         return tabs:get() == "Misc"
     end)
@@ -793,7 +799,7 @@ local logs_switch = menu:switch("Logs")
 
 -- Overengineered Killsay
 
-local function custom_killsay_import()
+local function CustomKillsayImport()
     local clipboard_text = clipboard.get()
 
     if not clipboard_text or clipboard_text == "" then
@@ -821,19 +827,19 @@ local function custom_killsay_import()
     return data
 end
 
-local killsay_switch = menu:switch("Killsay", false)
+local killsaySwitch = mainMenu:switch("Killsay", false)
     :visible(function()
        return tabs:get() == "Misc"
     end)
-local killsay_types = menu:selectable("Killsay Types", {"Promotional", "Trashtalk", "Fun", "Custom"})
+local killsayTypes = mainMenu:selectable("Killsay Types", {"Promotional", "Trashtalk", "Fun", "Custom"})
     :visible(function()
-        return killsay_switch:get() and tabs:get() == "Misc"
+        return killsaySwitch:get() and tabs:get() == "Misc"
     end)
-local custom_killsay = menu:button("Import Custom Killsay List", function()
-        CUSTOM_PHRASES = custom_killsay_import()
+local customKillsay = mainMenu:button("Import Custom Killsay List", function()
+        CUSTOM_PHRASES = CustomKillsayImport()
     end)
     :visible(function()
-        return killsay_switch:get() and tabs:get() == "Misc" and killsay_types:get("Custom")
+        return killsaySwitch:get() and tabs:get() == "Misc" and killsayTypes:get("Custom")
     end)
 
 local function table_contains(tbl, val)
@@ -845,9 +851,9 @@ local function table_contains(tbl, val)
     return false
 end
 
-local function get_active_killsays()
+local function GetActiveKillsays()
     local active = {}
-    local selected = killsay_types:get()
+    local selected = killsayTypes:get()
 
     if table_contains(selected, "Promotional") then
         for _, v in ipairs(PROMO_PHRASES) do
@@ -883,7 +889,7 @@ client.set_event_callback("player_death", function(e)
     if attacker ~= LOCAL_PLAYER then return end
     if not entity.is_enemy(victim) then return end
 
-    local killsays = get_active_killsays()
+    local killsays = GetActiveKillsays()
     if #killsays == 0 then return end
 
     local msg = killsays[math.random(#killsays)]
@@ -895,7 +901,7 @@ end)
 local old_tag_string = nil
 local can_reset = false
 
-local function create_clantag_animation()
+local function CreateClantagAnimation()
     local anim = {}
 
     local text, prefix = "Liberation", "✰ "
@@ -923,8 +929,8 @@ local function create_clantag_animation()
     return anim
 end
 
-local anim_txt = create_clantag_animation()
-local clantag = menu:switch("Clantag", false)
+local anim_txt = CreateClantagAnimation()
+local clantagSwitch = mainMenu:switch("Clantag", false)
     :visible(function()
         return tabs:get() == "Misc"
     end)
