@@ -178,14 +178,14 @@ local edgeYawhotkey = mainMenu:hotkey("a", true)
         return tabs:get() == "Anti-Aim"
     end)
     :add_callback("setup_command", function(bool) --Technically the most correct, if anyone wants to contribute use this event for hotkeys if :callback doesn't work
-        ui.set(refs.edge_yaw, bool:get() and edgeYawhotkey:get())
+        ui.set(refs.edge_yaw, bool:get())
     end)
 -- local override_warning = mainMenu:label("Currently haven't tested, may break") -- It DID break. Multiple ways too. Caching is broken(no clue how to fix), direction yaw conflicts are messed up(table with insert at index 1, and whatever's at index 1 it sets as)
 --     :visible(function()
 --         return tabs:get() == "Anti-Aim"
 --     end)
 
--- local yaw_cache, yaw_numcache, fs_cache, edge_yaw_cache = ui.get(refs.yaw[1]), ui.get(refs.yaw[2]), ui.get(refs.freestanding[2]), edge_yaw_hk:get()
+-- local yaw_cache, yaw_numcache, fs_cache, edge_yaw_cache = ui.get(refs.yaw[1]), ui.get(refs.yaw[2]), ui.get(refs.freestanding[2]), edgeYawhotkey:get()
 
 -- local left_override = mainMenu:hotkey("Yaw left override")
 --     :visible(function()
@@ -206,35 +206,35 @@ local edgeYawhotkey = mainMenu:hotkey("a", true)
 
 -- events.setup_command:set(function() --bandaid fix and is inefficient, though it should work for now until further integration.
 --     if not (left_override:get() or right_override:get() or front_override:get() or back_override:get()) then
---             yaw_cache, yaw_numcache, fs_cache, edge_yaw_cache = ui.get(refs.yaw[1]), ui.get(refs.yaw[2]), ui.get(refs.freestanding[2]), edge_yaw_switch:get() --@note: try ui.get with multiple arguements
+--             yaw_cache, yaw_numcache, fs_cache, edge_yaw_cache = ui.get(refs.yaw[1]), ui.get(refs.yaw[2]), ui.get(refs.freestanding[2]), edgeYaw:get() --@note: try ui.get with multiple arguements
 --             ui.set(refs.yaw[1], yaw_cache)
 --             ui.set(refs.yaw[2], yaw_numcache)
 --             ui.set(refs.freestanding[2], fs_cache)
---             edge_yaw_hk:set(edge_yaw_cache)
+--             edgeYawhotkey:set(edge_yaw_cache)
 --         return
 --     end
 -- local overrides = {}
 --     if left_override:get() then
 --         ui.set(refs.freestanding[2], false)
---         edge_yaw_switch:set(false)
+--         edgeYaw:set(false)
 --         table.insert(overrides, "left")
 --         ui.set(refs.yaw[1], "180")
 --         ui.set(refs.yaw[2], -90)
 --     elseif right_override:get() then
 --         ui.set(refs.freestanding[2], false)
---         edge_yaw_switch:set(false)
+--         edgeYaw:set(false)
 --         table.insert(overrides, "right")
 --         ui.set(refs.yaw[1], "180")
 --         ui.set(refs.yaw[2], 90)
 --     elseif front_override:get() then
 --         ui.set(refs.freestanding[2], false)
---         edge_yaw_switch:set(false)
+--         edgeYaw:set(false)
 --         table.insert(overrides, "front")
 --         ui.set(refs.yaw[1], "180")
 --         ui.set(refs.yaw[2], 180)
 --     else
 --         ui.set(refs.freestanding[2], false)
---         edge_yaw_switch:set(false)
+--         edgeYaw:set(false)
 --         print("BACK IS ON")
 --         table.insert(overrides, "back")
 --         ui.set(refs.yaw[1], "180")
@@ -346,12 +346,12 @@ local spectatorY = mainMenu:slider("Spectator Y", 0, SCREEN_SIZE.y, SCREEN_SIZE.
     :visible(function()
         return tabs:get() == "Visuals" and widgetTypes:get("Spectators list")
     end)
+local spectators = {}
 local function DrawSpectators(check, background_color, text_color)
     if not check then
         return
     end
 
-    local spectators = {}
     local spectated = LOCAL_PLAYER
     for i = 1, globals.maxplayers() do
         if entity.get_classname(i) == 'CCSPlayer' then
@@ -386,19 +386,16 @@ local function DrawSpectators(check, background_color, text_color)
             target = spectated
         end
     end
-
-    if target == nil then return end
-    local target_spectators = spectators[target]
-    if target_spectators == nil then return end
-
-
+    if spectators[target] == nil then
+        return
+    end
     
     local spectators_x = spectatorX:get() - 38
     local spectators_y = spectatorY:get() + 24
 
     local height_addition = 0
 
-    for _, index in pairs(target_spectators) do
+    for _, index in pairs(spectators[target]) do
         local name = entity.get_player_name(index)
         if not name then 
             goto continue 
@@ -413,6 +410,7 @@ local function DrawSpectators(check, background_color, text_color)
 
         ::continue::
     end
+    spectators = {}
 end
 
 --Crosshair indicator subsection
