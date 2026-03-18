@@ -400,7 +400,9 @@ local function DrawSpectators(check, background_color, text_color)
         if not name then 
             goto continue 
         end
-
+        if name == USER_NAME then 
+            goto continue
+        end
         local text_size_sub = vector(renderer.measure_text("d", name))
         if text_size_sub.y == 0 then goto continue end
 
@@ -440,6 +442,25 @@ local minDmgindicator = mainMenu:combo("Minimum damage number", "None", "Default
         return tabs:get() == "Visuals"
     end)
 
+local dmgOfflabel = mainMenu:label("Standard color")
+    :visible(function()
+        return tabs:get() == "Visuals" and minDmgindicator:get() ~= "None"
+    end)
+local dmgOffcolor = mainMenu:color_picker("Off color", 255, 255, 255, 177)
+    :visible(function()
+        return tabs:get() == "Visuals" and minDmgindicator:get() ~= "None"
+    end)
+
+local dmgOnlabel = mainMenu:label("Override color")
+    :visible(function()
+        return tabs:get() == "Visuals" and minDmgindicator:get() ~= "None"
+    end)
+local dmgOncolor = mainMenu:color_picker("On color", 255, 255, 255, 255)
+    :visible(function()
+        return tabs:get() == "Visuals" and minDmgindicator:get() ~= "None"
+    end)
+
+
 local function DrawIndicators(check, color) 
     if not check then
         return
@@ -447,6 +468,7 @@ local function DrawIndicators(check, color)
     if not (entity.is_alive(LOCAL_PLAYER)) then
         return
     end
+
     local col_r, col_g, col_b, col_a = color:get()
     local crosshair_indicators = {}
     local height_decrease = 16
@@ -457,28 +479,28 @@ local function DrawIndicators(check, color)
     local indicators = {}
     local new_dmg_full = nil
 
-    local function measure_txt(txt)
+    local function MeasureText(txt)
         return vector(renderer.measure_text(main_flag, txt))
     end
-    local function scope_check(txt)
+    local function ScopeCheck(txt)
         if entity.get_prop(LOCAL_PLAYER, "m_bIsScoped") == 0 then
             return 0
         else
             string.gsub(main_flag, "c", "r")
             string.gsub(sub_flag, "c", "r")
-            return measure_txt(txt).x / -1.75
+            return MeasureText(txt).x / -1.75
         end
     end
 
     if crosshairMain:get() == "Default" then
         main_flag = "cd"
-        renderer.text(MID_SCREEN.x - scope_check(lib), MID_SCREEN.y + height_decrease, col_r, col_g, col_b, col_a, main_flag, 0, lib)
+        renderer.text(MID_SCREEN.x - ScopeCheck(lib), MID_SCREEN.y + height_decrease, col_r, col_g, col_b, col_a, main_flag, 0, lib)
     elseif crosshairMain:get() == "Bold" then
         main_flag = "cdb"
-        renderer.text(MID_SCREEN.x - scope_check(lib), MID_SCREEN.y + height_decrease, col_r, col_g, col_b, col_a, main_flag, 0, lib)
+        renderer.text(MID_SCREEN.x - ScopeCheck(lib), MID_SCREEN.y + height_decrease, col_r, col_g, col_b, col_a, main_flag, 0, lib)
     else
         main_flag = "-c"
-        renderer.text(MID_SCREEN.x - scope_check(lib), MID_SCREEN.y + height_decrease, col_r, col_g, col_b, col_a, main_flag, 0, string.upper(lib))
+        renderer.text(MID_SCREEN.x - ScopeCheck(lib), MID_SCREEN.y + height_decrease, col_r, col_g, col_b, col_a, main_flag, 0, string.upper(lib))
     end
     if crosshairSub:get() == "Default" then
         sub_flag = "cd"
@@ -544,21 +566,24 @@ local function DrawIndicators(check, color)
     for n, e in ipairs(crosshair_indicators) do
         height_decrease = height_decrease + 11 -- Turns out shorthand math(+=) doesn't exist in lua
         
-        renderer.text(MID_SCREEN.x - scope_check(e), MID_SCREEN.y + height_decrease, 255, 255, 255, 255, sub_flag, 0, e)
+        renderer.text(MID_SCREEN.x - ScopeCheck(e), MID_SCREEN.y + height_decrease, 255, 255, 255, 255, sub_flag, 0, e)
     end
 end
 
-local function DmgIndicator(check)
+local function DmgIndicator(check, off_color, on_color)
     if not check then
         return
     end
     if not (entity.is_alive(LOCAL_PLAYER)) then
         return
     end
-    
+
+    local color_r, color_g, color_b, color_a = off_color:get()
     local flag = ""
-    local alpha = 177
     local dmg = ui.get(refs.min_dmg)
+        if dmg == 0 then 
+            dmg = "A"
+        end
 
     if minDmgindicator:get() == "Default" then
         flag = "cd"
@@ -567,11 +592,16 @@ local function DmgIndicator(check)
     else
         flag = "-c"
     end
+    
     if ui.get(refs.min_dmg_ovr[2]) then
-        alpha = 255
-        dmg = ui.get(refs.min_dmg_ovr[3])
+        if ui.get(refs.min_dmg_ovr[3]) == 0 then
+            dmg = "A"
+        else
+            dmg = ui.get(refs.min_dmg_ovr[3])
+        end
+        color_r, color_g, color_b, color_a = on_color:get()
     end
-    renderer.text(MID_SCREEN.x + 12, MID_SCREEN.y - 9, 255, 255, 255, alpha, flag, 0, dmg)
+    renderer.text(MID_SCREEN.x + 12, MID_SCREEN.y - 9, color_r, color_g, color_b, color_a, flag, 0, dmg)
 end
 -- local watermark_drag = drag.register({SCREEN_SIZE.x - text_size.x - 20, 10}, {text_size.x + 10, text_size.y + 8}, "Test", function(self))
 -- gotta ask mobby about how drag works so I can implement it properly for UI elements, including crosshair indicator at some point
@@ -580,7 +610,7 @@ events.paint:set(function()
     Watermark(widgetTypes:get("Watermark"), widgetBackground, widgetTxt)
     DrawSpectators(widgetTypes:get("Spectators list"), widgetBackground, widgetTxt)
     DrawIndicators(crosshairSwitch:get() or key, indicatorCrosshaircolor)
-    DmgIndicator(minDmgindicator:get() ~= "None")
+    DmgIndicator((minDmgindicator:get() ~= "None" and entity.is_alive(LOCAL_PLAYER)), dmgOffcolor, dmgOncolor)
     -- edge_yaw_toggle(edge_yaw_switch:get(), edge_yaw_hk:get())
 end)
 
@@ -881,6 +911,10 @@ local function GetActiveKillsays()
 end
 
 client.set_event_callback("player_death", function(e)
+    if not killsaySwitch:get() then
+        return
+    end
+
     local attacker = client.userid_to_entindex(e.attacker)
     local victim = client.userid_to_entindex(e.userid)
 
@@ -969,5 +1003,9 @@ events.shutdown:set(function()
     ui.set(refs.default_hitsound, true)
     utils.print(PREFIX, string.format("See you next time, %s.", USER_NAME))
 end)
+
+--//-- -- Fixing shit express, NO clue why this is so stubborn so this is here as an initial check.-NKill
+DrawIndicators(false)
+--//--
 
 utils.print(PREFIX, string.format("Fully loaded, %s. Welcome to Liberation.", USER_NAME))
