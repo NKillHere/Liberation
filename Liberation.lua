@@ -110,12 +110,15 @@ local refs = {
     yaw = {ui.reference("AA", "Anti-aimbot angles", "Yaw")},
     freestanding = {ui.reference("AA", "Anti-aimbot angles", "Freestanding")},
     edge_yaw = ui.reference("AA", "Anti-aimbot angles", "Edge yaw"),
-    fake_duck = ui.reference("RAGE", "Other", "Duck peek assist")
+    fake_duck = ui.reference("RAGE", "Other", "Duck peek assist"),
+    air_strafe = ui.reference("Misc", "Movement", "Air strafe")
 }
 
 -- |Variables|
 
 local local_alive = entity.is_alive(LOCAL_PLAYER)
+local velocity = vector(entity.get_prop(LOCAL_PLAYER, "m_vecVelocity")) -- self explanatory really.
+local speed = math.sqrt(velocity.x ^ 2 + velocity.y ^ 2)
 
 -- [Visuals]
 -- Viewmodel Changer
@@ -135,7 +138,7 @@ local viewmodel_cache = {
 -- |Menu|
 local mainMenu = lui.group("LUA", "A")
 local sideMenu = lui.group("LUA", "B")
-local tabs = mainMenu:combo("Tab", "Main", "Anti-Aim", "Visuals", "Misc")
+local tabs = mainMenu:combo("Tab", "Main", "Ragebot", "Anti-Aim", "Visuals", "Misc")
 
 
 -- [Main]
@@ -166,7 +169,16 @@ local accentColor = mainMenu:color_picker("Accent Color", ui.get(refs.menu_color
         ui.set(refs.menu_color, color:get())
     end)
 
-
+-- [Ragebot]
+-- Just a plce to store some ragebot improvements, such as skeet's dumb air strafe running on first jump, fucking up scout accuracy.
+local jumpscoutFix = mainMenu:switch("Jumpscout fix", false)
+    :visible(function()
+        return tabs:get() == "Ragebot"
+    end)
+    :add_callback("setup_command", function(bool, e))
+        ui.set(refs.air_strafe, not (bool:get() and e.in_jump and (speed < 10)))
+    end
+    
 -- [Anti-Aim] 
 -- Kind of a shell until I really get into writing the proper anti-aim, got some great ideas for defensive shenanigans and $tatic $upremacy
 
@@ -624,7 +636,7 @@ local aspectRatio = mainMenu:switch("Aspect Ratio")
     :callback(function(value)
         cvar.r_aspectratio:set_float(value:get() and 0)
     end)
-aspect_ratios = {[177] = '16:9', [161] = '16:10', [150] = '3:2', [133] = '4:3', [125] = '5:4'}
+local aspect_ratios = {[177] = '16:9', [161] = '16:10', [150] = '3:2', [133] = '4:3', [125] = '5:4'}
 
 local aspectRatiovalue = mainMenu:slider("Aspect Ratio Value", 0, 250, 150, true, false, 1, aspect_ratios)
     :visible(function()
@@ -661,7 +673,6 @@ local viewmodelX = mainMenu:slider("Viewmodel X", -500, 500, viewmodel_x_cache, 
     :visible(function()
         return viewmodelChanger:get() and tabs:get() == "Visuals"
     end)
-
     :callback(function(value)
         viewmodel_cache.x = value:get() / 100
         client.set_cvar("viewmodel_offset_x", value:get() / 100)
@@ -1036,10 +1047,122 @@ local fastLadder = mainmenu:switch("Fast Ladder", false)
 
             ::stop::
     end)
+
+-- Buybot, which also checks if the player has stuff already
+
+local buyBot = mainMenu:multiselect("Buybot", {"On $16k", "On non-$16k"})
+    :visible(function()
+        return tabs:get() == "Misc"
+    end)
+local buyPrimary = mainMenu:combo("Primary weapon", {"SSG-08", "AWP", "Auto", "Primary rifle", "Scoped rifle"})
+    :visible(function()
+        return tabs:get() == "Misc" and buyBot:get() ~= {}
+    end)
+local buySecondary = mainMenu:combo("Secondary weapon", {"Default pistol", "P250", "Dual Berettas", "Five-seveN/Tec-9", "Heavy pistol"})
+    :visible(function()
+        return tabs:get() == "Misc" and buyBot:get() ~= {}
+    end)
+local buyUtility = mainMenu:selectable("Utility", {"HE grenade", "Smoke", "Incindiary", "Flashbang(2x)", "Kevlar + helmet", "Defuse kit", "Taser"})
+    :visible(function()
+        return tabs:get() == "Misc" and buyBot:get() ~= {}
+    end)
+local local_money = entity.get_prop(LOCAL_PLAYER, "m_iAccount")
+local function GetBuyBotSelection(selection, weapon_type, server_type)
+    -- Quick do-over
+    if selection == "Default pistol" then
+        return
+    end
+
+    local team = entity.get_prop(LOCAL_PLAYER, "m_iTeamNum")
+    local tec_or_fn = team == 2 and "buy tec9" or "buy fn57"
+    local auto_type = team == 2 and "buy g3sg1" or "buy scar20"
+    local primary_rifle_type = team == 2 and "buy ak47" or "buy m4a1"
+    local scoped_rifle_type = team == 2 and "buy sg556" or "buy aug"
+    local incindiary_type = team == 2 and "buy molotov" or "buy incgrenade"
+    -- Community server priorities    
+    local function CommunityServer()
+        if weapon_type == "Primary" then
+            if selection == "AWP" then -- fast track these two for people who really want to get the highest chance of getting awp or auto
+                return "buy awp"
+                goto end
+            elseif selection == "Auto" then 
+                return auto_type
+                goto end
+            elseif selection == "SSG-08" then
+                return "buy ssg08"
+                goto end
+            elseif selection == "Primary rifle" then
+                return primary_rifle_type
+                goto end
+            else
+                return scoped_rifle_type
+                ::end::
+            end
+        end
+        if weapon_type == "Secondary" then
+            if selection == "P250" then
+                return "buy p250"
+                goto end
+            elseif selection == "Dual Berettas" then
+                return "buy elite"
+                goto end
+            elseif selection == "Five-seveN/Tec-9" then
+                return tec9_five_seven
+                goto end
+            else
+                return "buy deagle; buy revolver"
+                ::end::
+            end
+        end
+        if weapon_type == "Utility" then 
+            if selection == "Kevlar + helmet" then
+                return "buy vesthelm"
+                goto end
+            elseif selection == "Kevlar" then
+                return "buy vest"
+                goto end
+            elseif selection == "HE grenade" then
+                return "buy hegrenade"
+                goto end
+            elseif selection == "Smoke"
+                return "buy smokegrenade"
+                goto end
+            elseif selection == "Incindiary" then
+                return incindiary_type
+                goto end
+            elseif selection == "Flashbang(2x)" then
+                return "buy flashbang"
+                goto end
+            elseif selection == "Defuser" then
+                return "buy defuser" 
+            else selection == "Taser" then
+                return "buy taser"
+                ::end::
+            end
+        end
+        CommunityServer()
+    end
+end
+local function BuyBot(k16, nonk16, primary, secondary, utility)
+    if not (local_alive or (k16 and local_money == 16000 or local_money =< 1000) or (nonk16 and local_money ~= 16000 and globals.maxplayers() <= 64)) then
+        return
+    end
+
+    local buy_choices = primary.. " ; ".. secondary
+    if #utility == 0 then
+        goto end
+    else
+        for i = 1, #utility do
+            buy_choices = buychoices.. " ; ".. utility[i]
+        end
+    ::end::
+    client.exec(buy_choices) -- this avoids sending too many commands to the server and getting the player kicked
+end
 -- on shutdown fixing and print on full load
 
 
 events.shutdown:set(function()
+    ui.set(refs.air_strafe, true)
     ui.set(refs.edge_yaw, false)
     client.set_cvar("r_aspectratio", 0)
     client.set_cvar("viewmodel_offset_x", 1)
