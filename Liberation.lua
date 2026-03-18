@@ -115,6 +115,7 @@ local refs = {
 
 -- |Variables|
 
+local local_alive = entity.is_alive(LOCAL_PLAYER)
 
 -- [Visuals]
 -- Viewmodel Changer
@@ -378,7 +379,7 @@ local function DrawSpectators(check, background_color, text_color)
     renderer.rectangle(spectatorX:get() - text_size_main.x, spectatorY:get(), text_size_main.x + 80, text_size_main.y + 8, bkg_r, bkg_g, bkg_b, bkg_a)
     renderer.text(spectatorX:get() - text_size_main.x + 40, spectatorY:get() + 3, txt_r, txt_g, txt_b, txt_a, "d", 0, spectator_txt)
 
-    if entity.is_alive(LOCAL_PLAYER) then
+    if local_alive then
         target = LOCAL_PLAYER
     else
         local spectated = entity.get_prop(LOCAL_PLAYER, 'm_hObserverTarget')
@@ -465,7 +466,7 @@ local function DrawIndicators(check, color)
     if not check then
         return
     end
-    if not (entity.is_alive(LOCAL_PLAYER)) then
+    if not local_alive then
         return
     end
 
@@ -574,7 +575,7 @@ local function DmgIndicator(check, off_color, on_color)
     if not check then
         return
     end
-    if not (entity.is_alive(LOCAL_PLAYER)) then
+    if not local_alive then
         return
     end
 
@@ -610,7 +611,7 @@ events.paint:set(function()
     Watermark(widgetTypes:get("Watermark"), widgetBackground, widgetTxt)
     DrawSpectators(widgetTypes:get("Spectators list"), widgetBackground, widgetTxt)
     DrawIndicators(crosshairSwitch:get() or key, indicatorCrosshaircolor)
-    DmgIndicator((minDmgindicator:get() ~= "None" and entity.is_alive(LOCAL_PLAYER)), dmgOffcolor, dmgOncolor)
+    DmgIndicator((minDmgindicator:get() ~= "None" and local_alive), dmgOffcolor, dmgOncolor)
     -- edge_yaw_toggle(edge_yaw_switch:get(), edge_yaw_hk:get())
 end)
 
@@ -630,7 +631,7 @@ local aspectRatiovalue = mainMenu:slider("Aspect Ratio Value", 0, 250, 150, true
         return aspectRatio:get() and tabs:get() == "Visuals"
     end)
     :callback(function(value)
-        if not entity.is_alive(LOCAL_PLAYER) then
+        if not local_alive then
             return
         end
         client.set_cvar("r_aspectratio", value:get() / 100)
@@ -986,9 +987,55 @@ local clantagSwitch = mainMenu:switch("Clantag", false)
     end)
 
 -- Fast Ladder
+local fastLadderlabel = mainmenu:label("Fast ladder may not work")
+local fastLadder = mainmenu:switch("Fast Ladder", false)
+    :visible(function()
+        return tabs:get() == "Misc"
+    end)
+    :add_callback("setup_command", function(bool, e)
+        if not bool:get() then
+            goto stop
+        end
+        local move_type = entity.get_prop(LOCAL_PLAYER, "m_MoveType")
+        local throw_time = entity.get_prop(LOCAL_PLAYER, "m_fThrowTime") -- This is here to not fuck up throwing nades when on a ladder
+            if move_type ~= 9 then -- Valve docs say that 9 is the one for when the player's on a ladder
+                goto stop
+            end
+            if throw_time ~= nil and throw_time ~= 0 then
+                goto stop
+            end
 
+            if e.forwardmove > 0 then
+                e.pitch = 89
+                e.in_forward = 0
+                e.in_back = 1
+                e.in_moveleft = 0
+                e.in_moveright = 1
 
+                if e.sidemove == 0 then
+                    e.yaw = e.yaw + 90
+                elseif e.sidemove > 0 then
+                    e.yaw = e.yaw + 30
+                else 
+                    e.yaw = e.yaw + 150
+                end
+            elseif e.forwardmove < 0 then
+                e.pitch = 89
+                e.in_forward = 1
+                e.in_back = 0
+                e.in_moveleft = 1
+                e.in_moveright = 0
 
+                if e.sidemove == 0 then
+                    e.yaw = e.yaw + 90
+                elseif e.sidemove > 0 then
+                    e.yaw = e.yaw + 150
+                else 
+                    e.yaw = e.yaw + 30
+                end
+
+            ::stop::
+    end)
 -- on shutdown fixing and print on full load
 
 
