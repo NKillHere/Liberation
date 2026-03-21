@@ -47,6 +47,7 @@ local TRASH_PHRASES = {
     "paste user down",
     "buddha mode $",
     "did you say something, I can't hear you over the sound of my 100% winrate",
+    "did you invent failing? Because you are the best at it",
     "2kd+ with no sweat",
     "?",
     "You alright mate?",
@@ -73,7 +74,8 @@ local FUN_PHRASES = {
     "Mission accomplished! With extreme prejudice!",
     "Only my weapon understands me.",
     "Please don't think I'm a bigot, I kill races equally!",
-    "Mmm smells like chicken.", "So THAT's what that does.",
+    "Mmm smells like chicken.", 
+    "So THAT's what that does.",
     "That can't be good.",
     "That's gonna leave a mark.",
     "That's the ticket.",
@@ -105,16 +107,20 @@ local refs = {
     default_hitsound = ui.reference("Visuals", "Player ESP", "Hit marker sound"),
     min_dmg = ui.reference("RAGE", "Aimbot", "Minimum damage"),
     min_dmg_ovr = {ui.reference("RAGE", "Aimbot", "Minimum damage override")}, -- [1] is checkbox, bool, [2] is the keybind state, bool and [3] is the value, int
+    hit_chance = ui.reference("RAGE", "Aimbot", "Minimum hit chance"),
     double_tap = {ui.reference("RAGE", "Aimbot", "Double tap")},
     hide_shots = {ui.reference("AA", "Other", "On shot anti-aim")},
     yaw = {ui.reference("AA", "Anti-aimbot angles", "Yaw")},
     freestanding = {ui.reference("AA", "Anti-aimbot angles", "Freestanding")},
     edge_yaw = ui.reference("AA", "Anti-aimbot angles", "Edge yaw"),
-    fake_duck = ui.reference("RAGE", "Other", "Duck peek assist")
+    fake_duck = ui.reference("RAGE", "Other", "Duck peek assist"),
+    air_strafe = ui.reference("Misc", "Movement", "Air strafe")
 }
 
 -- |Variables|
 
+local local_alive = entity.is_alive(LOCAL_PLAYER)
+local local_active_weapon = entity.get_player_weapon(LOCAL_PLAYER)
 
 -- [Visuals]
 -- Viewmodel Changer
@@ -134,8 +140,7 @@ local viewmodel_cache = {
 -- |Menu|
 local mainMenu = lui.group("LUA", "A")
 local sideMenu = lui.group("LUA", "B")
-local tabs = mainMenu:combo("Tab", "Main", "Anti-Aim", "Visuals", "Misc")
-
+local tabs = mainMenu:combo("Tab", "Main", "Ragebot", "Anti-Aim", "Visuals", "Misc")
 
 -- [Main]
 local welcomeMessage = mainMenu:label("Welcome to liberation, ".. USER_NAME)
@@ -164,6 +169,60 @@ local accentColor = mainMenu:color_picker("Accent Color", ui.get(refs.menu_color
     :callback(function(color)
         ui.set(refs.menu_color, color:get())
     end)
+
+-- [Ragebot]
+-- Just a plce to store some ragebot improvements, such as skeet's dumb air strafe running on first jump, fucking up scout accuracy.
+local jumpscoutFix = mainMenu:switch("Jumpscout fix", false)
+    :visible(function()
+        return tabs:get() == "Ragebot"
+    end)
+events.setup_command:set(function(e)
+local velocity = vector(entity.get_prop(LOCAL_PLAYER, "m_vecVelocity")) -- self explanatory really.
+local speed = math.sqrt(velocity.x ^ 2 + velocity.y ^ 2)
+    if jumpscoutFix:get() then 
+        ui.set(refs.air_strafe, not (e.in_jump and (speed < 10)))
+    end
+end)
+-- local weaponsTab = sideMenu:combo("Weapon type", {"Auto", "SSG-08", "AWP", "Revolver", "Desert Eagle", "Pistol"})
+--     :visible(function()
+--         return tabs:get() == "Ragebot"
+--     end)
+-- local hc_Auto = sideMenu:slider("Hit chance override", 0, 100, 0, true, "%")
+--     :visible(function()
+--         return tabs:get() == "Ragebot" and weaponsTab:get() == "Auto"
+--     end)
+-- local hk_Hc_auto = sideMenu:hotkey("Auto override")
+--     :visible(function()
+--         return tabs:get() == "Ragebot" and weaponsTab:get() == "Auto"
+--     end)
+--     :callback(function(hk)
+--         if local_active_weapon == 38 or local_active_weapon == 11 and hk:get() then
+--             print("MF SHOULD HAVE AN AUTO AND PRESSED HC OVR")
+--             ui.set(refs.hit_chance, hc_Auto:get())
+--         else
+--             print("Doesn't have them.")
+--         end
+--     end)
+-- local hc_Scout = sideMenu:slider("Hit chance override", 0, 100, 0, true, "%")
+--     :visible(function()
+--         return tabs:get() == "Ragebot" and weaponsTab:get() == "SSG-08"
+--     end)
+-- local hc_Awp = sideMenu:slider("Hit chance override", 0, 100, 0, true, "%")
+--     :visible(function()
+--         return tabs:get() == "Ragebot" and weaponsTab:get() == "AWP"
+--     end)
+-- local hc_Revolver = sideMenu:slider("Hit chance override", 0, 100, 0, true, "%")
+--     :visible(function()
+--         return tabs:get() == "Ragebot" and weaponsTab:get() == "Revolver"
+--     end)
+-- local hc_Deagle = sideMenu:slider("Hit chance override", 0, 100, 0, true, "%")
+--     :visible(function()
+--         return tabs:get() == "Ragebot" and weaponsTab:get() == "Desert Eagle"
+--     end)
+-- local hc_Pistol = sideMenu:slider("Hit chance override", 0, 100, 0, true, "%")
+--     :visible(function()
+--         return tabs:get() == "Ragebot" and weaponsTab:get() == "Pistol"
+--     end)
 
 
 -- [Anti-Aim] 
@@ -378,7 +437,7 @@ local function DrawSpectators(check, background_color, text_color)
     renderer.rectangle(spectatorX:get() - text_size_main.x, spectatorY:get(), text_size_main.x + 80, text_size_main.y + 8, bkg_r, bkg_g, bkg_b, bkg_a)
     renderer.text(spectatorX:get() - text_size_main.x + 40, spectatorY:get() + 3, txt_r, txt_g, txt_b, txt_a, "d", 0, spectator_txt)
 
-    if entity.is_alive(LOCAL_PLAYER) then
+    if local_alive then
         target = LOCAL_PLAYER
     else
         local spectated = entity.get_prop(LOCAL_PLAYER, 'm_hObserverTarget')
@@ -465,7 +524,7 @@ local function DrawIndicators(check, color)
     if not check then
         return
     end
-    if not (entity.is_alive(LOCAL_PLAYER)) then
+    if not local_alive then
         return
     end
 
@@ -574,7 +633,7 @@ local function DmgIndicator(check, off_color, on_color)
     if not check then
         return
     end
-    if not (entity.is_alive(LOCAL_PLAYER)) then
+    if not local_alive then
         return
     end
 
@@ -610,7 +669,7 @@ events.paint:set(function()
     Watermark(widgetTypes:get("Watermark"), widgetBackground, widgetTxt)
     DrawSpectators(widgetTypes:get("Spectators list"), widgetBackground, widgetTxt)
     DrawIndicators(crosshairSwitch:get() or key, indicatorCrosshaircolor)
-    DmgIndicator((minDmgindicator:get() ~= "None" and entity.is_alive(LOCAL_PLAYER)), dmgOffcolor, dmgOncolor)
+    DmgIndicator((minDmgindicator:get() ~= "None" and local_alive), dmgOffcolor, dmgOncolor)
     -- edge_yaw_toggle(edge_yaw_switch:get(), edge_yaw_hk:get())
 end)
 
@@ -623,14 +682,14 @@ local aspectRatio = mainMenu:switch("Aspect Ratio")
     :callback(function(value)
         cvar.r_aspectratio:set_float(value:get() and 0)
     end)
-aspect_ratios = {[177] = '16:9', [161] = '16:10', [150] = '3:2', [133] = '4:3', [125] = '5:4'}
+local aspect_ratios = {[177] = '16:9', [161] = '16:10', [150] = '3:2', [133] = '4:3', [125] = '5:4'}
 
 local aspectRatiovalue = mainMenu:slider("Aspect Ratio Value", 0, 250, 150, true, false, 1, aspect_ratios)
     :visible(function()
         return aspectRatio:get() and tabs:get() == "Visuals"
     end)
     :callback(function(value)
-        if not entity.is_alive(LOCAL_PLAYER) then
+        if not local_alive then
             return
         end
         client.set_cvar("r_aspectratio", value:get() / 100)
@@ -660,7 +719,6 @@ local viewmodelX = mainMenu:slider("Viewmodel X", -500, 500, viewmodel_x_cache, 
     :visible(function()
         return viewmodelChanger:get() and tabs:get() == "Visuals"
     end)
-
     :callback(function(value)
         viewmodel_cache.x = value:get() / 100
         client.set_cvar("viewmodel_offset_x", value:get() / 100)
@@ -986,13 +1044,188 @@ local clantagSwitch = mainMenu:switch("Clantag", false)
     end)
 
 -- Fast Ladder
+local fastLadderlabel = mainMenu:label("Fast ladder may not work")
+    :visible(function()
+        return tabs:get() == "Misc"
+    end)
+local fastLadder = mainMenu:switch("Fast Ladder", false)
+    :visible(function()
+        return tabs:get() == "Misc"
+    end)
+    :add_callback("setup_command", function(bool, e)
+        if not bool:get() then
+            goto stop
+        end
+        local move_type = entity.get_prop(LOCAL_PLAYER, "m_MoveType")
+        local throw_time = entity.get_prop(LOCAL_PLAYER, "m_fThrowTime") -- This is here to not fuck up throwing nades when on a ladder
+            if move_type ~= 9 then -- Valve docs say that 9 is the one for when the player's on a ladder
+                goto stop
+            end
+            if throw_time ~= nil and throw_time ~= 0 then
+                goto stop
+            end
 
+            if e.forwardmove > 0 then
+                e.pitch = 89
+                e.in_forward = 0
+                e.in_back = 1
+                e.in_moveleft = 0
+                e.in_moveright = 1
 
+                if e.sidemove == 0 then
+                    e.yaw = e.yaw + 90
+                elseif e.sidemove > 0 then
+                    e.yaw = e.yaw + 30
+                else 
+                    e.yaw = e.yaw + 150
+                end
+            elseif e.forwardmove < 0 then
+                e.pitch = 89
+                e.in_forward = 1
+                e.in_back = 0
+                e.in_moveleft = 1
+                e.in_moveright = 0
 
+                if e.sidemove == 0 then
+                    e.yaw = e.yaw + 90
+                elseif e.sidemove > 0 then
+                    e.yaw = e.yaw + 150
+                else 
+                    e.yaw = e.yaw + 30
+                end
+
+            end
+        ::stop::
+    end)
+
+-- Buybot, which also checks if the player has stuff already
+
+local buyBot = sideMenu:switch("Buybot", false)
+    :visible(function()
+        return tabs:get() == "Misc"
+    end)
+local buyPrimary = sideMenu:combo("Primary weapon", {"SSG-08", "AWP", "Auto", "Primary rifle", "Scoped rifle"})
+    :visible(function()
+        return tabs:get() == "Misc" and buyBot:get()
+    end)
+local buySecondary = sideMenu:combo("Secondary weapon", {"Default pistol", "P250", "Dual Berettas", "Five-SeveN/Tec-9", "Heavy pistol"})
+    :visible(function()
+        return tabs:get() == "Misc" and buyBot:get()
+    end)
+local buyUtility = sideMenu:selectable("Utility", {"HE grenade", "Smoke", "Incindiary", "Flashbang(2x)", "Kevlar + helmet", "Defuse kit", "Taser"})
+    :visible(function()
+        return tabs:get() == "Misc" and buyBot:get()
+    end)
+
+local function GetBuyBotSelection(selection, weapon_type) --<int> number for some of them, check the valve wiki for more info on the buy cmd
+    -- Quick do-over
+    if selection == "Default pistol" then
+        return
+    end
+
+    if weapon_type == "Primary" then
+        if selection == "AWP" then -- fast track these two for people who really want to get the highest chance of getting awp or auto
+            return "buy awp"
+        end
+        if selection == "Auto" then 
+            return "buy 1 19"
+        end
+        if selection == "SSG-08" then
+            return "buy ssg08"
+        end
+        if selection == "Primary rifle" then
+            return "buy 1 15"
+        end
+        if selection == "Scoped rifle" then
+            return "buy 1 17"
+        end
+    end
+    if weapon_type == "Secondary" then
+        if selection == "P250" then
+            return "buy p250"
+        end
+        if selection == "Dual Berettas" then
+            return "buy elite"
+        end
+        if selection == "Five-SeveN/Tec-9" then
+            return "buy 1 5"
+        end
+        if selection == "Desert Eagle" then
+            return "buy 1 6"
+        end
+    end
+    if weapon_type == "Utility" then 
+        if selection == "Kevlar + helmet" then
+            return "buy vesthelm"
+        end
+        if selection == "Kevlar" then
+            return "buy vest"
+        end
+        if selection == "HE grenade" then
+            return "buy hegrenade"
+        end
+        if selection == "Smoke" then
+            return "buy smokegrenade"
+        end
+        if selection == "Incindiary" then
+            return "buy 1 26"
+        end
+        if selection == "Flashbang(2x)" then
+            return "buy flashbang"
+        end
+        if selection == "Defuser" then
+            return "buy defuser" 
+        end
+        if seelction == "Taser" then
+            return "buy taser"
+        end
+    end
+end
+
+local function BuyBot(check)
+    local local_money = entity.get_prop(LOCAL_PLAYER, "m_iAccount")
+    if not check then
+        return
+    end
+    if local_money < 16000 then
+        return 
+    end
+
+    -- if primary == nil then
+    --     local skipped_purchase = true
+    --     goto get_nades
+    -- end
+    primary = GetBuyBotSelection(buyPrimary:get(), "Primary")
+    secondary = GetBuyBotSelection(buySecondary:get(), "Secondary")
+    local buy_choices = primary.. " ; ".. secondary
+    utility = buyUtility:get()
+    if #utility == 0 then
+        if skipped_purchase then
+            return 
+        end
+        client.exec(buy_choices)
+    else
+        for i = 1, #utility do
+            utility_cmd = GetBuyBotSelection(utility, "Utility")
+            buy_choices = buy_choices.. " ; ".. utility[i]
+        end
+    end
+    client.exec(buy_choices) -- this avoids sending too many commands to the server and getting the player kicked
+    print("Bought ", buy_choices)
+end
+
+events.round_start:set(function()
+    if not local_alive then
+        BuyBot(buyBot:get())
+    else
+        BuyBot(buyBot:get(), nil, nil, buyUtility)
+    end
+end)
 -- on shutdown fixing and print on full load
 
 
 events.shutdown:set(function()
+    ui.set(refs.air_strafe, true)
     ui.set(refs.edge_yaw, false)
     client.set_cvar("r_aspectratio", 0)
     client.set_cvar("viewmodel_offset_x", 1)
@@ -1005,7 +1238,7 @@ events.shutdown:set(function()
 end)
 
 --//-- -- Fixing shit express, NO clue why this is so stubborn so this is here as an initial check.-NKill
-DrawIndicators(false)
+DrawIndicators()
 --//--
 
 utils.print(PREFIX, string.format("Fully loaded, %s. Welcome to Liberation.", USER_NAME))
