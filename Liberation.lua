@@ -147,7 +147,7 @@ local welcomeMessage = mainMenu:label("Welcome to liberation, ".. USER_NAME)
     :visible(function()
         return tabs:get() == "Main"
     end)
-local buildType = mainMenu:label("Build: Developer") -- Currently hardcoded, genuienly don't think I can do this in any other way lol, I'll have to make a separate branch for each type of releases.
+local buildType = mainMenu:label("Build: Debug") -- Currently hardcoded, genuienly don't think I can do this in any other way lol, I'll have to make a separate branch for each type of releases.
     :visible(function()
         return tabs:get() == "Main"
     end)
@@ -1044,10 +1044,6 @@ local clantagSwitch = mainMenu:switch("Clantag", false)
     end)
 
 -- Fast Ladder
-local fastLadderlabel = mainMenu:label("Fast ladder may not work")
-    :visible(function()
-        return tabs:get() == "Misc"
-    end)
 local fastLadder = mainMenu:switch("Fast Ladder", false)
     :visible(function()
         return tabs:get() == "Misc"
@@ -1211,7 +1207,6 @@ local function BuyBot(check)
         end
     end
     client.exec(buy_choices) -- this avoids sending too many commands to the server and getting the player kicked
-    print("Bought ", buy_choices)
 end
 
 events.round_start:set(function()
