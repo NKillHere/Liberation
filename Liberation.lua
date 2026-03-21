@@ -675,7 +675,7 @@ end)
 
 -- Aspect Ratio + its value that is visible only when switch is on
 
-local aspectRatio = mainMenu:switch("Aspect Ratio")
+local aspectRatio = sideMenu:switch("Aspect Ratio")
     :visible(function()
         return tabs:get() == "Visuals"
     end)
@@ -684,7 +684,7 @@ local aspectRatio = mainMenu:switch("Aspect Ratio")
     end)
 local aspect_ratios = {[177] = '16:9', [161] = '16:10', [150] = '3:2', [133] = '4:3', [125] = '5:4'}
 
-local aspectRatiovalue = mainMenu:slider("Aspect Ratio Value", 0, 250, 150, true, false, 1, aspect_ratios)
+local aspectRatiovalue = sideMenu:slider("Aspect Ratio Value", 0, 250, 150, true, false, 1, aspect_ratios)
     :visible(function()
         return aspectRatio:get() and tabs:get() == "Visuals"
     end)
@@ -697,7 +697,7 @@ local aspectRatiovalue = mainMenu:slider("Aspect Ratio Value", 0, 250, 150, true
 
 -- Viewmodel changer switch which reveals x, y, z and fov(in that order)
 
-local viewmodelChanger = mainMenu:switch("Viewmodel Changer")
+local viewmodelChanger = sideMenu:switch("Viewmodel Changer")
     :visible(function()
         return tabs:get() == "Visuals"
     end)
@@ -715,7 +715,7 @@ local viewmodelChanger = mainMenu:switch("Viewmodel Changer")
         end
     end)
 
-local viewmodelX = mainMenu:slider("Viewmodel X", -500, 500, viewmodel_x_cache, true, nil, 0.01)
+local viewmodelX = sideMenu:slider("Viewmodel X", -500, 500, viewmodel_x_cache, true, nil, 0.01)
     :visible(function()
         return viewmodelChanger:get() and tabs:get() == "Visuals"
     end)
@@ -724,7 +724,7 @@ local viewmodelX = mainMenu:slider("Viewmodel X", -500, 500, viewmodel_x_cache, 
         client.set_cvar("viewmodel_offset_x", value:get() / 100)
     end)
 
-local viewmodelY = mainMenu:slider("Viewmodel Y", -500, 500, preload_viewmodel_y_cache, true, nil, 0.01)
+local viewmodelY = sideMenu:slider("Viewmodel Y", -500, 500, preload_viewmodel_y_cache, true, nil, 0.01)
     :visible(function()
         return viewmodelChanger:get() and tabs:get() == "Visuals"
     end)
@@ -733,7 +733,7 @@ local viewmodelY = mainMenu:slider("Viewmodel Y", -500, 500, preload_viewmodel_y
         client.set_cvar("viewmodel_offset_y", value:get() / 100) 
     end)
 
-local viewmodelZ = mainMenu:slider("Viewmodel Z", -500, 500, preload_viewmodel_z_cache, true, nil, 0.01)
+local viewmodelZ = sideMenu:slider("Viewmodel Z", -500, 500, preload_viewmodel_z_cache, true, nil, 0.01)
     :visible(function()
         return viewmodelChanger:get() and tabs:get() == "Visuals"
     end)
@@ -742,7 +742,7 @@ local viewmodelZ = mainMenu:slider("Viewmodel Z", -500, 500, preload_viewmodel_z
         client.set_cvar("viewmodel_offset_z", value:get() / 100)
     end)
 
-local viewmodelFOV = mainMenu:slider("Viewmodel FOV", 50, 120, preload_viewmodel_fov_cache, true)
+local viewmodelFOV = sideMenu:slider("Viewmodel FOV", 50, 120, preload_viewmodel_fov_cache, true)
     :visible(function()
         return viewmodelChanger:get() and tabs:get() == "Visuals"
     end)
