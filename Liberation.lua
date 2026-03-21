@@ -147,7 +147,7 @@ local welcomeMessage = mainMenu:label("Welcome to liberation, ".. USER_NAME)
     :visible(function()
         return tabs:get() == "Main"
     end)
-local buildType = mainMenu:label("Build: Debug") -- Currently hardcoded, genuienly don't think I can do this in any other way lol, I'll have to make a separate branch for each type of releases.
+local buildType = mainMenu:label("Build: Developer") -- Currently hardcoded, genuienly don't think I can do this in any other way lol, I'll have to make a separate branch for each type of releases.
     :visible(function()
         return tabs:get() == "Main"
     end)
@@ -1211,6 +1211,7 @@ local function BuyBot(check)
         end
     end
     client.exec(buy_choices) -- this avoids sending too many commands to the server and getting the player kicked
+    print("Bought ", buy_choices)
 end
 
 events.round_start:set(function()
