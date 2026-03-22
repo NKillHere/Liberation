@@ -105,11 +105,11 @@ local BUYBOT_PRIMARY = { --<int> number for some of them, check the valve wiki f
     ["Scoped rifle"] = "buy 1 17"
 }
 local BUYBOT_SECONDARY = {
-    ["Default Pistol"] = "buy 1 2",
+    ["Default pistol"] = "buy 1 2",
     ["P250"] = "buy p250",
     ["Dual Berettas"] = "buy elite",
     ["Five-SeveN/Tec-9"] = "buy 1 5",
-    ["Heavy Pistol"] = "buy 1 6"
+    ["Heavy pistol"] = "buy 1 6"
 }
 local BUYBOT_UTILITY = {
     ["Kevlar + helmet"] = "buy vesthelm",
@@ -1173,10 +1173,12 @@ local function BuyBot(check)
     client.exec(buy_choices) -- this avoids sending too many commands to the server and getting the player kicked
 end
 
-events.round_start:set(function()
+events.player_spawned:set(function()
     BuyBot(buyBot:get())
 end)
-
+events.round_end_upload_stats:set(function()
+    BuyBot(buyBot:get())
+end)
 -- on shutdown fixing and print on full load
 
 
