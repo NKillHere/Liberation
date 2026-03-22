@@ -1141,7 +1141,7 @@ local function BuyBot(check)
     if not check then
         return
     end
-    if local_money < 16000 then
+    if local_money < 1000 then
         return 
     end
     local weapon = local_active_weapon
@@ -1173,12 +1173,13 @@ local function BuyBot(check)
     client.exec(buy_choices) -- this avoids sending too many commands to the server and getting the player kicked
 end
 
-events.player_spawned:set(function()
-    BuyBot(buyBot:get())
-end)
 events.round_end_upload_stats:set(function()
     BuyBot(buyBot:get())
 end)
+events.round_prestart:set(function()
+    BuyBot(buyBot:get())
+end)
+
 -- on shutdown fixing and print on full load
 
 
