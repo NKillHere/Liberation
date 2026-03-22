@@ -1170,16 +1170,11 @@ local function BuyBot(check)
             ::skip::
         end
     end
-    print(buy_choices)
     client.exec(buy_choices) -- this avoids sending too many commands to the server and getting the player kicked
 end
 
 events.round_start:set(function()
-    if not local_alive then
-        BuyBot(buyBot:get())
-    else
-        BuyBot(buyBot:get(), nil, nil, buyUtility)
-    end
+    BuyBot(buyBot:get())
 end)
 
 -- on shutdown fixing and print on full load
