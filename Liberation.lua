@@ -97,6 +97,29 @@ local FUN_PHRASES = {
     "𝕖𝕧𝕖𝕣𝕪𝕥𝕚𝕞𝕖 𝕚𝕕𝕚𝕠𝕥 𝕔𝕠𝕞𝕡𝕒𝕣𝕖 𝕞𝕖 𝕛𝕦𝕤𝕥 𝕣𝕖𝕞𝕖𝕞𝕓𝕖𝕣 𝕚𝕞 𝕠𝕡𝕡𝕠𝕤𝕚𝕥𝕖 𝕦𝕚𝕕 𝕕𝕠𝕨𝕟 𝕜𝕕 𝕦𝕡 (◣_◢)",
     "HvH Highlights #7000 feat. (insert paste here)"
 }
+local BUYBOT_PRIMARY = { --<int> number for some of them, check the valve wiki for more info on the buy cmd
+    ["AWP"] = "buy awp", -- fast track these two for people who really want to get the highest chance of getting awp or auto
+    ["Auto"] = "buy 1 19",
+    ["SSG-08"] ="buy ssg08",
+    ["Primary rifle"] = "buy 1 15",
+    ["Scoped rifle"] = "buy 1 17"
+}
+local BUYBOT_SECONDARY = {
+    ["Default Pistol"] = "buy 1 2",
+    ["P250"] = "buy p250",
+    ["Dual Berettas"] = "buy elite",
+    ["Five-SeveN/Tec-9"] = "buy 1 5",
+    ["Heavy Pistol"] = "buy 1 6"
+}
+local BUYBOT_UTILITY = {
+    ["Kevlar + helmet"] = "buy vesthelm",
+    ["HE grenade"] = "buy hegrenade",
+    ["Smoke"] = "buy smokegrenade",
+    ["Incindiary"] = "buy 1 26",
+    ["Flashbang"] = "buy flashbang",
+    ["Defuse kit"] = "buy defuser",
+    ["Taser"] = "buy taser"
+}
 
 
 -- | References |
@@ -1108,75 +1131,10 @@ local buySecondary = sideMenu:combo("Secondary weapon", {"Default pistol", "P250
     :visible(function()
         return tabs:get() == "Misc" and buyBot:get()
     end)
-local buyUtility = sideMenu:selectable("Utility", {"HE grenade", "Smoke", "Incindiary", "Flashbang(2x)", "Kevlar + helmet", "Defuse kit", "Taser"})
+local buyUtility = sideMenu:selectable("Utility", {"HE grenade", "Smoke", "Incindiary", "Flashbang", "Kevlar + helmet", "Defuse kit", "Taser"})
     :visible(function()
         return tabs:get() == "Misc" and buyBot:get()
     end)
-
-local function GetBuyBotSelection(selection, weapon_type) --<int> number for some of them, check the valve wiki for more info on the buy cmd
-    -- Quick do-over
-    if selection == "Default pistol" then
-        return
-    end
-
-    if weapon_type == "Primary" then
-        if selection == "AWP" then -- fast track these two for people who really want to get the highest chance of getting awp or auto
-            return "buy awp"
-        end
-        if selection == "Auto" then 
-            return "buy 1 19"
-        end
-        if selection == "SSG-08" then
-            return "buy ssg08"
-        end
-        if selection == "Primary rifle" then
-            return "buy 1 15"
-        end
-        if selection == "Scoped rifle" then
-            return "buy 1 17"
-        end
-    end
-    if weapon_type == "Secondary" then
-        if selection == "P250" then
-            return "buy p250"
-        end
-        if selection == "Dual Berettas" then
-            return "buy elite"
-        end
-        if selection == "Five-SeveN/Tec-9" then
-            return "buy 1 5"
-        end
-        if selection == "Desert Eagle" then
-            return "buy 1 6"
-        end
-    end
-    if weapon_type == "Utility" then 
-        if selection == "Kevlar + helmet" then
-            return "buy vesthelm"
-        end
-        if selection == "Kevlar" then
-            return "buy vest"
-        end
-        if selection == "HE grenade" then
-            return "buy hegrenade"
-        end
-        if selection == "Smoke" then
-            return "buy smokegrenade"
-        end
-        if selection == "Incindiary" then
-            return "buy 1 26"
-        end
-        if selection == "Flashbang(2x)" then
-            return "buy flashbang"
-        end
-        if selection == "Defuser" then
-            return "buy defuser" 
-        end
-        if seelction == "Taser" then
-            return "buy taser"
-        end
-    end
-end
 
 local function BuyBot(check)
     local local_money = entity.get_prop(LOCAL_PLAYER, "m_iAccount")
@@ -1186,26 +1144,33 @@ local function BuyBot(check)
     if local_money < 16000 then
         return 
     end
-
+    local weapon = local_active_weapon
     -- if primary == nil then
     --     local skipped_purchase = true
     --     goto get_nades
     -- end
-    primary = GetBuyBotSelection(buyPrimary:get(), "Primary")
-    secondary = GetBuyBotSelection(buySecondary:get(), "Secondary")
-    local buy_choices = primary.. " ; ".. secondary
-    utility = buyUtility:get()
+    local local_team = entity.get_prop(LOCAL_PLAYER, "m_iTeamNum")
+    local primary = BUYBOT_PRIMARY[buyPrimary:get()]
+    local secondary = BUYBOT_SECONDARY[buySecondary:get()]
+
+    local utility = buyUtility:get()
+    local buy_choices = nil
+    local utility_cmd = nil
+
+    buy_choices = primary.. "; ".. secondary
     if #utility == 0 then
-        if skipped_purchase then
-            return 
-        end
         client.exec(buy_choices)
     else
         for i = 1, #utility do
-            utility_cmd = GetBuyBotSelection(utility, "Utility")
-            buy_choices = buy_choices.. " ; ".. utility[i]
+            if utility[i] == "Defuse kit" and local_team == 2 then
+                goto skip
+            end
+            utility_cmd = BUYBOT_UTILITY[utility[i]]
+            buy_choices = buy_choices.. "; ".. utility_cmd
+            ::skip::
         end
     end
+    print(buy_choices)
     client.exec(buy_choices) -- this avoids sending too many commands to the server and getting the player kicked
 end
 
@@ -1216,6 +1181,7 @@ events.round_start:set(function()
         BuyBot(buyBot:get(), nil, nil, buyUtility)
     end
 end)
+
 -- on shutdown fixing and print on full load
 
 
