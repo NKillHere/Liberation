@@ -1141,7 +1141,7 @@ local function BuyBot(check)
     if not check then
         return
     end
-    if local_money < 1000 then
+    if local_money < 1001 then
         return 
     end
     local weapon = local_active_weapon
