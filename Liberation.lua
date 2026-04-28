@@ -19,10 +19,10 @@ local vector = require("vector")
 
 local NAMED_HITGROUPS = {"generic", "head", "chest", "stomach", "left arm", "right arm", "left leg","right leg", "neck", "?", "gear"}
 local PREFIX = "Liberation"
-local DIRECTORY = filesystem.get_game_directory() 
+local DIRECTORY = filesystem.get_game_directory()
 local USER_NAME = utils.name()
 local SCREEN_SIZE = vector(client.screen_size())
-local MID_SCREEN = vector(SCREEN_SIZE.x /2, SCREEN_SIZE.y / 2)
+local MID_SCREEN = vector(SCREEN_SIZE.x / 2, SCREEN_SIZE.y / 2)
 local LOCAL_PLAYER = entity.get_local_player()
 local PROMO_PHRASES = {
     "Flying free and hitting heads with Liberation | github.com/NKillHere/Liberation",
@@ -144,6 +144,7 @@ local refs = {
 
 local local_alive = entity.is_alive(LOCAL_PLAYER)
 local local_active_weapon = entity.get_player_weapon(LOCAL_PLAYER)
+local local_team = entity.get_prop(LOCAL_PLAYER, "m_iTeamNum")
 
 -- [Visuals]
 -- Viewmodel Changer
@@ -175,7 +176,7 @@ local buildType = mainMenu:label("Build: Debug") -- Currently hardcoded, genuien
         return tabs:get() == "Main"
     end)
 local fluxerButton = mainMenu:button("Official Fluxer", function()
-        panorama.open().SteamOverlayAPI.OpenExternalBrowserURL("https://fluxer.gg/iZez6vyQ")
+        panorama.open().SteamOverlayAPI.OpenExternalBrowserURL("https://fluxer.gg/34ZBtaGK")
     end)
     :visible(function()
         return tabs:get() == "Main"
@@ -882,7 +883,7 @@ local logsSwitch = mainMenu:switch("Logs")
         mismatch_check = "✔"
         intended_txt = ""
 
-        if e.damage ~= logs.intended_dmg and logs.intended_dmg >= entity_hp and e.damage < entity_hp or ui.get(refs.min_dmg_ovr[2]) and e.damage < ui.get(refs.min_dmg_ovr[3]) then -- This SHOULD be correct, but do make a PR if smth is wrong -NKill
+        if e.damage ~= logs.intended_dmg and logs.intended_dmg >= entity_hp or ui.get(refs.min_dmg_ovr[2]) and e.damage < ui.get(refs.min_dmg_ovr[3]) then -- This SHOULD be correct, but do make a PR if smth is wrong -NKill
             logs.mismatch_check = "‼"
             print("DEBUG: intended hg: ", logs.intended_hitgroup, " | ", "intended dmg:", logs.intended_dmg) -- I have NO fucking clue why this isn't working properly, this debug feature will stick until then
             intended_txt = string.format("[Intended damage: %d]", logs.intended_dmg)
@@ -999,11 +1000,17 @@ client.set_event_callback("player_death", function(e)
     local attacker = client.userid_to_entindex(e.attacker)
     local victim = client.userid_to_entindex(e.userid)
 
-    if attacker ~= LOCAL_PLAYER then return end
-    if not entity.is_enemy(victim) then return end
+    if attacker ~= LOCAL_PLAYER then 
+        return 
+    end
+    if not entity.is_enemy(victim) then 
+        return 
+    end
 
     local killsays = GetActiveKillsays()
-    if #killsays == 0 then return end
+    if #killsays == 0 then 
+        return 
+    end
 
     local msg = killsays[math.random(#killsays)]
     client.exec("say " .. msg)
@@ -1135,29 +1142,45 @@ local buyUtility = sideMenu:selectable("Utility", {"HE grenade", "Smoke", "Incin
     :visible(function()
         return tabs:get() == "Misc" and buyBot:get()
     end)
+local local_money = 0
+local function GetMoney()
+    local_money = entity.get_prop(LOCAL_PLAYER, "m_iAccount")
+end
+
+local function AutoCheck() -- Check if you have SCAR20 and have the autobuy for G3SG1, and keeps SCAR20 due to factual superiority.
+    if local_team ~= 2 then
+        return 1
+    end
+    if local_active_weapon == nil then 
+        return 1
+    end
+    if primary == "buy 1 19" and local_active_weapon:get_classname() == "CWeaponSCAR20" then 
+        return 2
+    end
+end
 
 local function BuyBot(check)
-    local local_money = entity.get_prop(LOCAL_PLAYER, "m_iAccount")
     if not check then
         return
     end
     if local_money < 1001 then
         return 
     end
-    local weapon = local_active_weapon
-    -- if primary == nil then
-    --     local skipped_purchase = true
-    --     goto get_nades
-    -- end
-    local local_team = entity.get_prop(LOCAL_PLAYER, "m_iTeamNum")
+
     local primary = BUYBOT_PRIMARY[buyPrimary:get()]
     local secondary = BUYBOT_SECONDARY[buySecondary:get()]
-
     local utility = buyUtility:get()
+
     local buy_choices = nil
     local utility_cmd = nil
 
-    buy_choices = primary.. "; ".. secondary
+    local case = AutoCheck()
+    if case == 1 then 
+        buy_choices = primary.. "; ".. secondary
+    else
+        buy_choices = secondary
+    end
+
     if #utility == 0 then
         client.exec(buy_choices)
     else
@@ -1173,11 +1196,11 @@ local function BuyBot(check)
     client.exec(buy_choices) -- this avoids sending too many commands to the server and getting the player kicked
 end
 
-events.round_end_upload_stats:set(function()
-    BuyBot(buyBot:get())
-end)
-events.round_prestart:set(function()
-    BuyBot(buyBot:get())
+events.player_spawn:set(function(e)
+    if not e.inrestart and client.userid_to_entindex(e.userid) == LOCAL_PLAYER then
+        GetMoney()
+        BuyBot(buyBot:get())
+    end
 end)
 
 -- on shutdown fixing and print on full load
@@ -1186,17 +1209,12 @@ end)
 events.shutdown:set(function()
     ui.set(refs.air_strafe, true)
     ui.set(refs.edge_yaw, false)
-    client.set_cvar("r_aspectratio", 0)
-    client.set_cvar("viewmodel_offset_x", 1)
-    client.set_cvar("viewmodel_offset_y", 1)
-    client.set_cvar("viewmodel_offset_z", -1.5)
-    client.set_cvar("viewmodel_fov", 60)
     client.set_clan_tag("")
     ui.set(refs.default_hitsound, true)
     utils.print(PREFIX, string.format("See you next time, %s.", USER_NAME))
 end)
 
---//-- -- Fixing shit express, NO clue why this is so stubborn so this is here as an initial check.-NKill
+--//-- On start, useful when reloading the script or when DrawIndicators()'s scope check fucks up
 DrawIndicators()
 --//--
 
