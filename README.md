@@ -1,6 +1,9 @@
+<img width="829" height="127" alt="logo" src="https://github.com/user-attachments/assets/d4954877-0b6a-45f6-91e7-70764e2e0dd6" />
+
 # Welcome.<br/>
-Currently antiaim is in the roadmap, although it is very far away.  
-Some features are as well not completely functional. Read the source code for more details.<br/>
+Liberation is a free and open source script for gamesense, made to be efficient and innovative.  
+It currently has customizable indicators, spectators list, watermark, killsay, fast ladder, conditional(money based and scar20-checking) buybot and other smaller helpful additions. In the future, it will also include anti-aim and toggleable animations for players that have less-powerful computers.  
+Fly Free with Liberation. 
 
 ## Libraries required:  
 Clipboard  
@@ -12,6 +15,4 @@ Clipboard
   
 ## Got a suggestion / Found a bug?  
 We're on [Fluxer](https://fluxer.gg/kF4oaB64)!  
-You can also make an [issue](https://github.com/NKillHere/Liberation/issues) and use the 'Enhancement' label  
-Please do check that your suggestion was not made before. If it was, just react positively to it, this also applies to bugs.  
-Please do describe your bug/suggestion in the most detail you can. We are not Nostradamus, we cannot read your mind.
+You can also make an [issue](https://github.com/NKillHere/Liberation/issues), just please read the [guide](https://github.com/NKillHere/Liberation?tab=contributing-ov-file#suggestions)
