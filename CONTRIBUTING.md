@@ -36,13 +36,22 @@ git clone https://github.com/NKillHere/Liberation
   * Features that are regarded as particularly useless or inefficient resource-wise, e.g. "Side watermark with catgirl picture (image rendering is resource-expensive and should be avoided.)"
   * Changes that break existing implementations(e.g. changing set variables or constants)  without strong justification.
 
+## Suggestions
+When filing a feature request, please include:
+  * The use case with explanation. "I want X because Y" is more useful than "please add X".
+  * Check that your suggestion was not made before. If it was, just react positively to it.
+  * Use the 'enhancement' label
+  * Describe it in the most detail you could, We are not Nostradamus, we cannot read your mind.
+
 ## Reporting issues  
 When filing a bug report, please include:
   * If on the Debug version, link to the commit version of the version you are using. If not, the release version of the script. 
   * The feature of which is broken
   * Steps to recreate the bug, preferably
   * Screenshot or clip of the bug, if possible
-  How to get the commit version link:
+  * Any further details not covered by the other points.
+
+### How to get the commit version link:
   <img width="1857" height="957" alt="image" src="https://github.com/user-attachments/assets/f5478b68-e2a2-4674-a318-e2184c9558a2" />
 
 ## License
