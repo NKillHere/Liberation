@@ -1,4 +1,3 @@
-
 -- Welcome to the pit. If you're here to contribute, do send a pull request on github.com/NKillHere/Liberation. Thanks in advance.
 -- If you're here to copy code, follow the GPLv3 license terms.
 
@@ -144,6 +143,7 @@ local refs = {
 
 local local_alive = entity.is_alive(LOCAL_PLAYER)
 local local_active_weapon = entity.get_player_weapon(LOCAL_PLAYER)
+local local_active_weapon_name = local_active_weapon:get_classname()
 local local_team = entity.get_prop(LOCAL_PLAYER, "m_iTeamNum")
 
 -- [Visuals]
@@ -345,7 +345,7 @@ local widgetTypes = mainMenu:selectable("Widget Types", "Watermark", "Spectators
     :visible(function()
         return tabs:get() == "Visuals" and widgetSwitch:get()
     end)
-    
+
 local watermarkTypes = mainMenu:selectable("Watermark Addons", "Script name", "Name", "FPS", "Ping", "Tick rate", "Time(24h)")
     :visible(function() 
         return tabs:get() == "Visuals" and widgetTypes:get("Watermark") and widgetSwitch:get()
@@ -472,7 +472,7 @@ local function DrawSpectators(check, background_color, text_color)
     if spectators[target] == nil then
         return
     end
-    
+
     local spectators_x = spectatorX:get() - 38
     local spectators_y = spectatorY:get() + 24
 
@@ -648,7 +648,7 @@ local function DrawIndicators(check, color)
     end
     for n, e in ipairs(crosshair_indicators) do
         height_decrease = height_decrease + 11 -- Turns out shorthand math(+=) doesn't exist in lua
-        
+
         renderer.text(MID_SCREEN.x - ScopeCheck(e), MID_SCREEN.y + height_decrease, 255, 255, 255, 255, sub_flag, 0, e)
     end
 end
@@ -675,7 +675,7 @@ local function DmgIndicator(check, off_color, on_color)
     else
         flag = "-c"
     end
-    
+
     if ui.get(refs.min_dmg_ovr[2]) then
         if ui.get(refs.min_dmg_ovr[3]) == 0 then
             dmg = "A"
@@ -726,7 +726,7 @@ local viewmodelChanger = sideMenu:switch("Viewmodel Changer")
         return tabs:get() == "Visuals"
     end)
     :callback(function(bool)
-        if not bool:get() then 
+        if not bool:get() then
             client.set_cvar("viewmodel_offset_x", preload_viewmodel_x_cache)
             client.set_cvar("viewmodel_offset_y", preload_viewmodel_y_cache)
             client.set_cvar("viewmodel_offset_z", preload_viewmodel_z_cache)
@@ -925,7 +925,7 @@ local function CustomKillsayImport()
         utils.print(PREFIX, "For more information, please check the official github.")
         return
     end
- 
+
     for index = 1, #data do
         if type(data[index]) ~= "string" then
             utils.print(PREFIX, "Invalid format, all killsays must be strings.")
@@ -1154,7 +1154,7 @@ local function AutoCheck() -- Check if you have SCAR20 and have the autobuy for 
     if local_active_weapon == nil then 
         return 1
     end
-    if primary == "buy 1 19" and local_active_weapon:get_classname() == "CWeaponSCAR20" then 
+    if primary == "buy 1 19" and local_active_weapon_name == "CWeaponSCAR20" then
         return 2
     end
 end
