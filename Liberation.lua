@@ -143,7 +143,10 @@ local refs = {
 
 local local_alive = entity.is_alive(LOCAL_PLAYER)
 local local_active_weapon = entity.get_player_weapon(LOCAL_PLAYER)
-local local_active_weapon_name = local_active_weapon:get_classname()
+if pcall(function()
+    local_active_weapon_name = local_active_weapon:get_classname()
+end) then
+end
 local local_team = entity.get_prop(LOCAL_PLAYER, "m_iTeamNum")
 
 -- [Visuals]
