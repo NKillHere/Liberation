@@ -9,7 +9,7 @@
 
 -- |Libraries|
 
-local lapi = require "gamesense/lapi" or error("LAPI is required for this lua, download from https://github.com/Tony1337-bit/library")
+local lapi = require "gamesense/lapi" or error("LAPI is required for this lua, you can download it from https://github.com/Tony1337-bit/library")
 local clipboard = require("gamesense/clipboard")
 local vector = require("vector")
 
@@ -1150,16 +1150,20 @@ local function GetMoney()
     local_money = entity.get_prop(LOCAL_PLAYER, "m_iAccount")
 end
 
-local function AutoCheck() -- Check if you have SCAR20 and have the autobuy for G3SG1, and keeps SCAR20 due to factual superiority.
-    if local_team ~= 2 then
-        return 1
+local function GetLocalWeapons()
+    local weapons = {}
+
+    for i = 0, 64 do -- Thanks to a friend of mine that knows C++, I can't explain this in any other way other than it's like a list that you need to iterate over, in which it returns a bunch of indexes that you can get the class name of.
+        local weapon = entity.get_prop(LOCAL_PLAYER, "m_hMyWeapons", i)
+
+        if weapon ~= nil then
+            table.insert(weapons, weapon)
+        else
+            break -- Will return nil for the rest of the loop after the 3rd element(the primary weapon) or when not alive.
+        end
     end
-    if local_active_weapon == nil then 
-        return 1
-    end
-    if primary == "buy 1 19" and local_active_weapon_name == "CWeaponSCAR20" then
-        return 2
-    end
+
+    return weapons
 end
 
 local function BuyBot(check)
@@ -1167,7 +1171,7 @@ local function BuyBot(check)
         return
     end
     if local_money < 1001 then
-        return 
+        return
     end
 
     local primary = BUYBOT_PRIMARY[buyPrimary:get()]
@@ -1177,8 +1181,8 @@ local function BuyBot(check)
     local buy_choices = nil
     local utility_cmd = nil
 
-    local case = AutoCheck()
-    if case == 1 then 
+    local local_player_weapons = GetLocalWeapons()
+    if #local_player_weapons == 2 then
         buy_choices = primary.. "; ".. secondary
     else
         buy_choices = secondary
