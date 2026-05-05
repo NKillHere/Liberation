@@ -2,7 +2,7 @@
 
 # Welcome.<br/>
 Liberation is a free and open source script for gamesense, made to be efficient and innovative.  
-It currently has customizable indicators, spectators list, watermark, killsay, fast ladder, conditional(money based and scar20-checking) buybot and other smaller helpful additions. In the future, it will also include anti-aim and toggleable animations for players that have less-powerful computers.  
+It currently has customizable indicators, spectators list, watermark, killsay, fast ladder, conditional(money based and inventory-checking) buybot and other smaller helpful additions. In the future, it will also include anti-aim and toggleable animations for players that have less-powerful computers.  
 Fly Free with Liberation. 
 
 ## Libraries required:  
