@@ -99,7 +99,7 @@ local FUN_PHRASES = {
 local BUYBOT_PRIMARY = { --<int> number for some of them, check the valve wiki for more info on the buy cmd
     ["AWP"] = "buy awp", -- fast track these two for people who really want to get the highest chance of getting awp or auto
     ["Auto"] = "buy 1 19",
-    ["SSG-08"] ="buy ssg08",
+    ["SSG-08"] = "buy ssg08",
     ["Primary rifle"] = "buy 1 15",
     ["Scoped rifle"] = "buy 1 17"
 }
