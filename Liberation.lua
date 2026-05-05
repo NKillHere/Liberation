@@ -906,7 +906,7 @@ local logsSwitch = mainMenu:switch("Logs")
                 missreason = "resolver" -- nice try skeet
             end
 
-        utils.print(PREFIX, string.format("[X] Missed %s's %s due to %s (tp: %s | hc: %d%% | bt:%st [%dms])", 
+        utils.print(PREFIX, string.format("[X] Missed %s's %s due to %s (tp: %s | hc: %d%% | bt:%st [%dms])",
         entity.get_player_name(e.target), hitgroup_name, missreason, logs.tp, e.hit_chance, logs.bt, math.floor(totime(logs.bt) * 1000)))
     end)
 
@@ -1153,16 +1153,13 @@ end
 local function GetLocalWeapons()
     local weapons = {}
 
-    for i = 0, 64 do -- Thanks to a friend of mine that knows C++, I can't explain this in any other way other than it's like a list that you need to iterate over, in which it returns a bunch of indexes that you can get the class name of.
+    for i = 0, 16 do -- Thanks to a friend of mine that knows C++, I can't explain this in any other way other than it's like a list that you need to iterate over, in which it returns a bunch of indexes that you can get the class name of.
         local weapon = entity.get_prop(LOCAL_PLAYER, "m_hMyWeapons", i)
 
         if weapon ~= nil then
             table.insert(weapons, weapon)
-        else
-            break -- Will return nil for the rest of the loop after the 3rd element(the primary weapon) or when not alive.
         end
     end
-
     return weapons
 end
 
@@ -1182,7 +1179,7 @@ local function BuyBot(check)
     local utility_cmd = nil
 
     local local_player_weapons = GetLocalWeapons()
-    if #local_player_weapons == 2 then
+    if #local_player_weapons <= 2 then
         buy_choices = primary.. "; ".. secondary
     else
         buy_choices = secondary
