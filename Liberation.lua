@@ -152,10 +152,10 @@ local local_team = entity.get_prop(LOCAL_PLAYER, "m_iTeamNum")
 -- [Visuals]
 -- Viewmodel Changer
 -- @note: QoL to reset to default if user wants to, tho if he reloads the lua it'll save over, tough shit!
-preload_viewmodel_x_cache = cvar.viewmodel_offset_x:get_float()
-preload_viewmodel_y_cache = cvar.viewmodel_offset_y:get_float()
-preload_viewmodel_z_cache = cvar.viewmodel_offset_z:get_float()
-preload_viewmodel_fov_cache = cvar.viewmodel_fov:get_float()
+local preload_viewmodel_x_cache = cvar.viewmodel_offset_x:get_float()
+local preload_viewmodel_y_cache = cvar.viewmodel_offset_y:get_float()
+local preload_viewmodel_z_cache = cvar.viewmodel_offset_z:get_float()
+local preload_viewmodel_fov_cache = cvar.viewmodel_fov:get_float()
 
 local viewmodel_cache = {
     x = 0,
