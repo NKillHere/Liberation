@@ -667,7 +667,7 @@ local function DmgIndicator(check, off_color, on_color)
     local color_r, color_g, color_b, color_a = off_color:get()
     local flag = ""
     local dmg = ui.get(refs.min_dmg)
-        if dmg == 0 then 
+        if dmg == 0 then
             dmg = "A"
         end
 
