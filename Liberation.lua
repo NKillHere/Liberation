@@ -547,7 +547,7 @@ local dmgOncolor = mainMenu:color_picker("On color", 255, 255, 255, 255)
     end)
 
 
-local function DrawIndicators(check, color) 
+local function DrawIndicators(check, color)
     if not check then
         return
     end
